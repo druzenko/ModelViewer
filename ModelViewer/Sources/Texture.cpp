@@ -3,6 +3,21 @@
 #include "DirectXTex.h"
 #include "Utility.h"
 
+std::map<std::wstring, Texture> Texture::sTextureRegister;
+
+Texture* Texture::FindOrCreateTexture(const std::wstring& aPath)
+{
+    auto findIt = sTextureRegister.find(aPath);
+    if (findIt != sTextureRegister.end())
+    {
+        return &findIt->second;
+    }
+    else
+    {
+        return &(sTextureRegister.emplace(std::make_pair(aPath, Texture(aPath))).first->second);
+    }
+}
+
 Texture::Texture(const std::wstring& aPath)
 {
 	auto image = std::make_unique<DirectX::ScratchImage>();

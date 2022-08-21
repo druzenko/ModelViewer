@@ -23,3 +23,7 @@
 #define D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN   ((D3D12_GPU_VIRTUAL_ADDRESS)-1)
 
 #include "Graphics.h"
+
+#include <string>
+#include <vector>
+#include <map>

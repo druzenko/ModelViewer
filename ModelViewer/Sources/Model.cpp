@@ -37,7 +37,7 @@ Mesh Model::ProcessMesh(const aiMesh* aMesh, const aiScene* aScene)
 {
 	std::vector<Vertex> vertices(aMesh->mNumVertices);
 	std::vector<unsigned int> indices;
-	std::vector<Texture> textures;
+	std::vector<Texture*> textures;
 
 	for (unsigned int i = 0; i < aMesh->mNumVertices; ++i)
 	{
@@ -76,7 +76,7 @@ Mesh Model::ProcessMesh(const aiMesh* aMesh, const aiScene* aScene)
 	{
 		aiMaterial* material = aScene->mMaterials[aMesh->mMaterialIndex];
 
-		std::vector<Texture> materialTextures;
+		std::vector<Texture*> materialTextures;
 
 		for (unsigned int textureType = aiTextureType_NONE; textureType < AI_TEXTURE_TYPE_MAX; ++textureType)
 		{
@@ -88,16 +88,16 @@ Mesh Model::ProcessMesh(const aiMesh* aMesh, const aiScene* aScene)
 	return Mesh(Buffer(vertices.size(), sizeof(Vertex), vertices.data()), Buffer(indices.size(), sizeof(unsigned int), indices.data()), std::move(textures));
 }
 
-std::vector<Texture> Model::LoadMaterialTextures(const aiMaterial* aMaterial, aiTextureType aTextureType)
+std::vector<Texture*> Model::LoadMaterialTextures(const aiMaterial* aMaterial, aiTextureType aTextureType)
 {
-	std::vector<Texture> textures;
+	std::vector<Texture*> textures;
 	for (unsigned int i = 0; i < aMaterial->GetTextureCount(aTextureType); ++i)
 	{
 		aiString string;
 		aMaterial->GetTexture(aTextureType, i, &string);
 		std::string fileName = string.C_Str();
 		std::wstring texturePath = mDirectory + std::wstring(fileName.begin(), fileName.end());
-		textures.emplace_back(Texture(texturePath));
+		textures.emplace_back(Texture::FindOrCreateTexture(texturePath));
 	}
 	return textures;
 }

@@ -2,7 +2,7 @@
 #include "Mesh.h"
 #include "Utility.h"
 
-Mesh::Mesh(const Buffer& aVertexBuffer, const Buffer& aIndexBuffer, std::vector<Texture>&& aTextures)
+Mesh::Mesh(const Buffer& aVertexBuffer, const Buffer& aIndexBuffer, std::vector<Texture*>&& aTextures)
 	: mVertexBuffer(aVertexBuffer)
 	, mIndexBuffer(aIndexBuffer)
 	, mTextures(aTextures)
@@ -32,7 +32,7 @@ void Mesh::SetupMesh()
 
 		for (UINT i = 0; i < mTextures.size(); ++i)
 		{
-			mTextures[i].CreateSRV(mSRVDescriptorHeap, i);
+			mTextures[i]->CreateSRV(mSRVDescriptorHeap, i);
 		}
 	}
 }

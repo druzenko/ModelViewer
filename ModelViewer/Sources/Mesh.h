@@ -1,7 +1,5 @@
 #pragma once
 
-#include <string>
-#include <vector>
 #include <DirectXMath.h>
 #include "Texture.h"
 #include "Buffer.h"
@@ -17,7 +15,7 @@ class Mesh
 {
 	Buffer mVertexBuffer;
 	Buffer mIndexBuffer;
-	std::vector<Texture> mTextures;
+	std::vector<Texture*> mTextures;
 
 	D3D12_VERTEX_BUFFER_VIEW m_VertexBufferView;
 	D3D12_INDEX_BUFFER_VIEW m_IndexBufferView;
@@ -28,7 +26,7 @@ private:
 	inline void SetupMesh();
 
 public:
-	Mesh(const Buffer& aVertexBuffer, const Buffer& aIndexBuffer, std::vector<Texture>&& aTextures);
+	Mesh(const Buffer& aVertexBuffer, const Buffer& aIndexBuffer, std::vector<Texture*>&& aTextures);
 	void Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList, UINT rootParameterIndex) const;
 };
 

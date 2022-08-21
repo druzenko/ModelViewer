@@ -1,13 +1,14 @@
 #pragma once
 
+#include "pch.h"
 #include "GPUResource.h"
 
 class Texture : public GpuResource
 {
 public:
-    Texture() { m_hCpuDescriptorHandle.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN; }
-    Texture(D3D12_CPU_DESCRIPTOR_HANDLE Handle) : m_hCpuDescriptorHandle(Handle) {}
-    Texture(const std::wstring& aPath);
+    //Texture() { m_hCpuDescriptorHandle.ptr = D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN; }
+    //Texture(D3D12_CPU_DESCRIPTOR_HANDLE Handle) : m_hCpuDescriptorHandle(Handle) {}
+    static Texture* FindOrCreateTexture(const std::wstring& aPath);
 
     void CreateSRV(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> SRVDescriptorHeap, UINT offset) const;
 
@@ -24,6 +25,10 @@ public:
     const D3D12_CPU_DESCRIPTOR_HANDLE& GetSRV() const { return m_hCpuDescriptorHandle; }
 
 private:
+    Texture(const std::wstring& aPath);
+
+    static std::map<std::wstring, Texture> sTextureRegister;
+
     uint32_t m_Width;
     uint32_t m_Height;
     uint32_t m_Depth;
