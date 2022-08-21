@@ -12,12 +12,7 @@
 class ModelViewer : public IApplication
 {
     DirectX::XMMATRIX m_ModelMatrix;
-    //DirectX::XMMATRIX m_ViewMatrix;
     DirectX::XMMATRIX m_ProjectionMatrix;
-
-    //DirectX::XMVECTOR m_CameraPosition;
-    //DirectX::XMVECTOR m_CameraFront;
-    //DirectX::XMVECTOR m_CameraUp;
 
     D3D12_VIEWPORT m_Viewport;
     D3D12_RECT m_ScissorRect;
@@ -58,7 +53,7 @@ ModelViewer::ModelViewer()
 
 void ModelViewer::Startup(void)
 {
-    m_Model = Model("../../Scenes/bedroom/iscv2.obj");
+    m_Model = Model("../../Scenes/sponza/sponza.obj");
     //m_Model = Model("../../Scenes/nanosuit/nanosuit.obj");
 
     // Load the vertex shader.
@@ -147,10 +142,7 @@ void ModelViewer::Startup(void)
     ASSERT_HRESULT(device2->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&m_PipelineState)), "Failed to create pipline state object.");
 
     m_ModelMatrix = DirectX::XMMatrixIdentity();
-    
-    //m_CameraPosition = DirectX::XMVectorSet(0, 10, -15, 1);
-    //m_CameraFront = DirectX::XMVectorSet(0, 0, 1, 0);
-    //m_CameraUp = DirectX::XMVectorSet(0, 1, 0, 0);
+    m_ModelMatrix = DirectX::XMMatrixScaling(0.01, 0.01, 0.01);
 
     m_ScissorRect = CD3DX12_RECT(0, 0, LONG_MAX, LONG_MAX);
 }
@@ -207,8 +199,6 @@ void ModelViewer::Update(double deltaT)
     Utility::Printf("Frame time: %f, FPS: %f\n", deltaT, 1.0f/deltaT);
 
     m_LastFrameTime = deltaT;
-
-    //m_ViewMatrix = DirectX::XMMatrixLookToLH(m_CameraPosition, m_CameraFront, m_CameraUp);
 
     float aspectRatio = Graphics::g_DisplayWidth / static_cast<float>(Graphics::g_DisplayHeight);
     m_ProjectionMatrix = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(Graphics::m_FoV), aspectRatio, 0.1f, 100.0f);
