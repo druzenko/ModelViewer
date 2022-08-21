@@ -9,8 +9,8 @@ namespace Graphics
     void Resize(int width, int height);
 
     extern constexpr uint32_t g_SwapChainBufferCount = 3;
-    extern constexpr uint32_t g_DisplayWidth = 1136;
-    extern constexpr uint32_t g_DisplayHeight = 640;
+    extern constexpr uint32_t g_DisplayWidth = 1920;
+    extern constexpr uint32_t g_DisplayHeight = 1080;
     extern constexpr uint32_t m_FoV = 45.0f;
     extern uint32_t g_CurrentBackBufferIndex;
     extern Microsoft::WRL::ComPtr<ID3D12Device> g_Device;

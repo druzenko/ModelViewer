@@ -57,6 +57,9 @@ Texture::Texture(const std::wstring& aPath)
 
                 UpdateSubresources(Graphics::g_CommandList.Get(), m_pResource.Get(), intermediateResource.Get(), 0, 0, subresourcesCount, subresources.data());
 
+                CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_pResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+                Graphics::g_CommandList->ResourceBarrier(1, &barrier);
+
                 Graphics::g_CommandList->Close();
 
                 ID3D12CommandList* const commandLists[] = { Graphics::g_CommandList.Get() };

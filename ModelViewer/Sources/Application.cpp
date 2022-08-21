@@ -5,8 +5,8 @@
 #include <iostream>
 #include <WindowsX.h>
 
-uint32_t g_DisplayWidth = 1136;
-uint32_t g_DisplayHeight = 640;
+uint32_t g_DisplayWidth = 1920;
+uint32_t g_DisplayHeight = 1080;
 
 HWND g_hWnd = nullptr;
 IApplication* g_App;

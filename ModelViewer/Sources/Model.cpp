@@ -12,7 +12,6 @@ Model::Model(const std::string& aPath)
 void Model::LoadModel(const std::string& aPath)
 {
 	Assimp::Importer importer;
-	//const aiScene* scene = importer.ReadFile(aPath.data(), aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_GenSmoothNormals);
 	const aiScene* scene = importer.ReadFile(aPath.data(), aiProcess_Triangulate | aiProcess_ConvertToLeftHanded | aiProcess_GenSmoothNormals);
 
 	ASSERT(scene != nullptr && (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) == 0 && scene->mRootNode != nullptr, "Model is not loaded.");
@@ -37,7 +36,7 @@ void Model::ProcessNode(const aiNode* aNode, const aiScene* aScene)
 Mesh Model::ProcessMesh(const aiMesh* aMesh, const aiScene* aScene)
 {
 	std::vector<Vertex> vertices(aMesh->mNumVertices);
-	std::vector<UINT16> indices;
+	std::vector<unsigned int> indices;
 	std::vector<Texture> textures;
 
 	for (unsigned int i = 0; i < aMesh->mNumVertices; ++i)
@@ -77,17 +76,19 @@ Mesh Model::ProcessMesh(const aiMesh* aMesh, const aiScene* aScene)
 	{
 		aiMaterial* material = aScene->mMaterials[aMesh->mMaterialIndex];
 
-		std::vector<Texture> diffuseMaps = LoadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
-		textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+		std::vector<Texture> materialTextures;
 
-		std::vector<Texture> specularMaps = LoadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
-		textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
+		for (unsigned int textureType = aiTextureType_NONE; textureType < AI_TEXTURE_TYPE_MAX; ++textureType)
+		{
+			materialTextures = LoadMaterialTextures(material, (aiTextureType)textureType);
+			textures.insert(textures.end(), materialTextures.begin(), materialTextures.end());
+		}
 	}
 
-	return Mesh(Buffer(vertices.size(), sizeof(Vertex), vertices.data()), Buffer(indices.size(), sizeof(UINT16), indices.data()), std::move(textures));
+	return Mesh(Buffer(vertices.size(), sizeof(Vertex), vertices.data()), Buffer(indices.size(), sizeof(unsigned int), indices.data()), std::move(textures));
 }
 
-std::vector<Texture> Model::LoadMaterialTextures(const aiMaterial* aMaterial, aiTextureType aTextureType, std::string aTypeName)
+std::vector<Texture> Model::LoadMaterialTextures(const aiMaterial* aMaterial, aiTextureType aTextureType)
 {
 	std::vector<Texture> textures;
 	for (unsigned int i = 0; i < aMaterial->GetTextureCount(aTextureType); ++i)
