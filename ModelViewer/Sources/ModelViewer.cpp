@@ -9,6 +9,12 @@
 
 #include "Utility.h"
 
+struct Transform
+{
+    DirectX::XMMATRIX MVP;
+    DirectX::XMMATRIX MV;
+};
+
 class ModelViewer : public IApplication
 {
     DirectX::XMMATRIX m_ModelMatrix;
@@ -43,7 +49,7 @@ public:
     void OnMouseMoved(int aDeltaX, int aDeltaY) override;
 };
 
-CREATE_APPLICATION(ModelViewer)
+//CREATE_APPLICATION(ModelViewer)
 
 ModelViewer::ModelViewer()
     : mCamera(DirectX::XMVectorSet(0, 10, -15, 1), DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f), gYaw, gPitch)
@@ -67,6 +73,8 @@ void ModelViewer::Startup(void)
     // Create the vertex input layout
     D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
         { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
     };
@@ -89,7 +97,7 @@ void ModelViewer::Startup(void)
 
     // A single 32-bit constant root parameter that is used by the vertex shader.
     CD3DX12_ROOT_PARAMETER1 rootParameters[2];
-    rootParameters[0].InitAsConstants(sizeof(DirectX::XMMATRIX) / sizeof(float), 0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
+    rootParameters[0].InitAsConstants(sizeof(Transform) / sizeof(float), 0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
 
     CD3DX12_DESCRIPTOR_RANGE1 range;
     range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
@@ -265,9 +273,10 @@ void ModelViewer::RenderScene(void)
     Graphics::g_CommandList->RSSetScissorRects(1, &m_ScissorRect);
     Graphics::g_CommandList->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
 
-    DirectX::XMMATRIX mvpMatrix = XMMatrixMultiply(m_ModelMatrix, mCamera.getViewMatrix());
-    mvpMatrix = XMMatrixMultiply(mvpMatrix, m_ProjectionMatrix);
-    Graphics::g_CommandList->SetGraphicsRoot32BitConstants(0, sizeof(DirectX::XMMATRIX) / 4, &mvpMatrix, 0);
+    Transform transform;
+    transform.MV = XMMatrixMultiply(m_ModelMatrix, mCamera.getViewMatrix());
+    transform.MVP = XMMatrixMultiply(transform.MV, m_ProjectionMatrix);
+    Graphics::g_CommandList->SetGraphicsRoot32BitConstants(0, sizeof(Transform) / sizeof(float), &transform, 0);
 
     m_Model.Render(Graphics::g_CommandList, 1);
 

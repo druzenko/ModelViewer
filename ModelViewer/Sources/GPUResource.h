@@ -8,7 +8,8 @@ public:
     GpuResource() :
         m_GpuVirtualAddress(D3D12_GPU_VIRTUAL_ADDRESS_NULL),
         m_UsageState(D3D12_RESOURCE_STATE_COMMON),
-        m_TransitioningState((D3D12_RESOURCE_STATES)-1)
+        m_TransitioningState((D3D12_RESOURCE_STATES)-1),
+        mFormat(DXGI_FORMAT_UNKNOWN)
     {
     }
 
@@ -16,7 +17,8 @@ public:
         m_GpuVirtualAddress(D3D12_GPU_VIRTUAL_ADDRESS_NULL),
         m_pResource(pResource),
         m_UsageState(CurrentState),
-        m_TransitioningState((D3D12_RESOURCE_STATES)-1)
+        m_TransitioningState((D3D12_RESOURCE_STATES)-1),
+        mFormat(pResource->GetDesc().Format)
     {
     }
 
@@ -38,10 +40,13 @@ public:
 
     D3D12_GPU_VIRTUAL_ADDRESS GetGpuVirtualAddress() const { return m_GpuVirtualAddress; }
 
+    DXGI_FORMAT GetFormat() const { return mFormat; }
+
 protected:
 
     Microsoft::WRL::ComPtr<ID3D12Resource> m_pResource;
     D3D12_RESOURCE_STATES m_UsageState;
     D3D12_RESOURCE_STATES m_TransitioningState;
     D3D12_GPU_VIRTUAL_ADDRESS m_GpuVirtualAddress;
+    DXGI_FORMAT mFormat;
 };

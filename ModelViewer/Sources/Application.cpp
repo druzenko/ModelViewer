@@ -178,7 +178,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             c = translatedCharacters[0];
         }
 
-        g_App->OnKeyEvent({ static_cast<KeyEvent::KeyCode>(wParam), KeyEvent::KeyState::Pressed, c, control, shift, alt });
+        g_App->OnKeyEvent({ static_cast<KeyEvent::KeyCode>(wParam), KeyEvent::KeyState::Released, c, control, shift, alt });
     }
     break;
     default:

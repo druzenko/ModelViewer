@@ -29,6 +29,7 @@ namespace Graphics
     UINT g_SRVDescriptorSize = 0;
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> g_RTVDescriptorHeap = nullptr;
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> g_DSVDescriptorHeap = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12QueryHeap> g_QueryOcclusionHeap = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> g_BackBuffers[g_SwapChainBufferCount];
     Microsoft::WRL::ComPtr<ID3D12Resource> g_DepthBuffer;
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> g_CommandAllocators[g_SwapChainBufferCount];
@@ -86,6 +87,49 @@ namespace Graphics
 
         return pixInstallationPath / newestVersionFound / L"WinPixGpuCapturer.dll";
     }
+
+    static void ProcessDREDAutoBreadcrumbsOutput(const D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1& DREDOutput, std::string& output)
+    {
+
+    }
+
+    static void ProcessDREDPageFaultOutput(const D3D12_DRED_PAGE_FAULT_OUTPUT1& DREDOutput, std::string& output)
+    {
+        __debugbreak();
+    }
+
+    void GPUCrashCallback(HRESULT errorCode)
+    {
+        switch (errorCode)
+        {
+        case DXGI_ERROR_DEVICE_REMOVED:
+        case DXGI_ERROR_DEVICE_HUNG:
+        case DXGI_ERROR_DEVICE_RESET:
+        {
+            HRESULT reason = g_Device->GetDeviceRemovedReason();
+            Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedData1> pDred;
+            if (SUCCEEDED(g_Device->QueryInterface(IID_PPV_ARGS(&pDred))))
+            {
+                std::string output;
+                D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1 DredAutoBreadcrumbsOutput;
+                D3D12_DRED_PAGE_FAULT_OUTPUT1 DredPageFaultOutput;
+
+                if (SUCCEEDED(pDred->GetAutoBreadcrumbsOutput1(&DredAutoBreadcrumbsOutput)))
+                {
+                    ProcessDREDAutoBreadcrumbsOutput(DredAutoBreadcrumbsOutput, output);
+                }
+
+                if (SUCCEEDED(pDred->GetPageFaultAllocationOutput1(&DredPageFaultOutput)))
+                {
+                    ProcessDREDPageFaultOutput(DredPageFaultOutput, output);
+                }
+            }
+            break;
+        }
+        default:
+            break;
+        }
+    }
 #endif
 
     uint32_t GetVendorIdFromDevice(ID3D12Device* pDevice)
@@ -94,8 +138,9 @@ namespace Graphics
 
         // Obtain the DXGI factory
         Microsoft::WRL::ComPtr<IDXGIFactory4> dxgiFactory;
+        UINT createFactoryFlags = 0;
 #if _DEBUG
-        UINT createFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
+        createFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
 #endif
         ASSERT_HRESULT(CreateDXGIFactory2(createFactoryFlags, IID_PPV_ARGS(&dxgiFactory)), "IDXGIFactory4 is not created");
 
@@ -170,7 +215,7 @@ namespace Graphics
 
     uint64_t Signal()
     {
-        SUCCEEDED(g_CommandQueue->Signal(g_Fence.Get(), ++g_FenceValue));
+        ASSERT_HRESULT(g_CommandQueue->Signal(g_Fence.Get(), ++g_FenceValue), "Error: ID3D12CommandQueue::Signal");
         return g_FenceValue;
     }
 
@@ -178,7 +223,7 @@ namespace Graphics
     {
         if (g_Fence->GetCompletedValue() < g_FenceValue)
         {
-            SUCCEEDED(g_Fence->SetEventOnCompletion(g_FenceValue, g_FenceEvent));
+            ASSERT_HRESULT(g_Fence->SetEventOnCompletion(g_FenceValue, g_FenceEvent), "Error: ID3D12Fence::SetEventOnCompletion");
             ::WaitForSingleObject(g_FenceEvent, static_cast<DWORD>(std::chrono::milliseconds::max().count()));
         }
     }
@@ -207,6 +252,16 @@ namespace Graphics
 
         if (useDebugLayers)
         {
+            //DRED
+            Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> pDredSettings;
+            if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&pDredSettings))))
+            {
+                // Turn on AutoBreadcrumbs and Page Fault reporting
+                pDredSettings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+                pDredSettings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+            }
+
+
             Microsoft::WRL::ComPtr<ID3D12Debug> debugInterface;
             if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface))))
             {
@@ -405,8 +460,9 @@ namespace Graphics
 
         //Create the swap chain
         {
+            UINT createFactoryFlags = 0;
 #if _DEBUG
-            UINT createFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
+            createFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
 #endif
             Microsoft::WRL::ComPtr<IDXGIFactory4> dxgiFactory4;
             SUCCEEDED(CreateDXGIFactory2(createFactoryFlags, IID_PPV_ARGS(&dxgiFactory4)));
@@ -495,6 +551,14 @@ namespace Graphics
             SUCCEEDED(g_Device->CreateDescriptorHeap(&Desc, IID_PPV_ARGS(&g_DSVDescriptorHeap)));
         }
 
+        //Create a heap for occlusion queries
+        {
+            D3D12_QUERY_HEAP_DESC queryHeapDesc = {};
+            queryHeapDesc.Count = 1;
+            queryHeapDesc.Type = D3D12_QUERY_HEAP_TYPE_OCCLUSION;
+            SUCCEEDED(g_Device->CreateQueryHeap(&queryHeapDesc, IID_PPV_ARGS(&g_QueryOcclusionHeap)));
+        }
+
         //Get SRV descriptor size
         g_SRVDescriptorSize = g_Device->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
@@ -536,7 +600,7 @@ namespace Graphics
     {
         UINT syncInterval = g_VSync ? 1 : 0;
         UINT presentFlags = g_TearingSupported && !g_VSync ? DXGI_PRESENT_ALLOW_TEARING : 0;
-        SUCCEEDED(g_SwapChain3->Present(syncInterval, presentFlags));
+        ASSERT_HRESULT(g_SwapChain3->Present(syncInterval, presentFlags), "Error: IDXGISwapChain3::Present");
  
         g_FrameFenceValues[g_CurrentBackBufferIndex] = Signal();
 
