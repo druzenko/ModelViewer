@@ -102,7 +102,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>user32.lib;runtimeobject.lib;assimp-vc142-mtd.lib;shell32.lib;DXGI.lib;D3D12.lib;dxguid.lib;advapi32.lib;DirectXTex.lib;D3DCompiler.lib;Shlwapi.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)ThirdPartyLibraries\Assimp\$(Configuration)\;$(SolutionDir)ThirdPartyLibraries\DirectXTex\DirectXTex\Bin\Desktop_2019\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)ThirdPartyLibraries\Assimp\$(Configuration)\;$(SolutionDir)ThirdPartyLibraries\DirectXTex\DirectXTex\Bin\Desktop_2019_Win10\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y /d "$(SolutionDir)ThirdPartyLibraries\Assimp\$(Configuration)\assimp-vc142-mtd.dll" "$(OutDir)"</Command>
@@ -130,11 +130,11 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>user32.lib;runtimeobject.lib;assimp-vc142-mtd.lib;shell32.lib;DXGI.lib;D3D12.lib;dxguid.lib;advapi32.lib;DirectXTex.lib;D3DCompiler.lib;Shlwapi.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)ThirdPartyLibraries\Assimp\$(Configuration)\;$(SolutionDir)ThirdPartyLibraries\DirectXTex\DirectXTex\Bin\Desktop_2019\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>user32.lib;runtimeobject.lib;assimp-vc142-mt.lib;shell32.lib;DXGI.lib;D3D12.lib;dxguid.lib;advapi32.lib;DirectXTex.lib;D3DCompiler.lib;Shlwapi.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)ThirdPartyLibraries\Assimp\$(Configuration)\;$(SolutionDir)ThirdPartyLibraries\DirectXTex\DirectXTex\Bin\Desktop_2019_Win10\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y /d "$(SolutionDir)ThirdPartyLibraries\Assimp\$(Configuration)\assimp-vc142-mtd.dll" "$(OutDir)"</Command>
+      <Command>xcopy /y /d "$(SolutionDir)ThirdPartyLibraries\Assimp\$(Configuration)\assimp-vc142-mt.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <FxCompile>
       <ShaderModel>5.1</ShaderModel>
@@ -156,7 +156,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>user32.lib;runtimeobject.lib;assimp-vc142-mtd.lib;shell32.lib;DXGI.lib;D3D12.lib;dxguid.lib;advapi32.lib;DirectXTex.lib;D3DCompiler.lib;Shlwapi.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)ThirdPartyLibraries\Assimp\$(Configuration)\;$(SolutionDir)ThirdPartyLibraries\DirectXTex\DirectXTex\Bin\Desktop_2019\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)ThirdPartyLibraries\Assimp\$(Configuration)\;$(SolutionDir)ThirdPartyLibraries\DirectXTex\DirectXTex\Bin\Desktop_2019_Win10\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /y /d "$(SolutionDir)ThirdPartyLibraries\Assimp\$(Configuration)\assimp-vc142-mtd.dll" "$(OutDir)"</Command>
@@ -184,11 +184,11 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>user32.lib;runtimeobject.lib;assimp-vc142-mtd.lib;shell32.lib;DXGI.lib;D3D12.lib;dxguid.lib;advapi32.lib;DirectXTex.lib;D3DCompiler.lib;Shlwapi.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)ThirdPartyLibraries\Assimp\$(Configuration)\;$(SolutionDir)ThirdPartyLibraries\DirectXTex\DirectXTex\Bin\Desktop_2019\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>user32.lib;runtimeobject.lib;assimp-vc142-mt.lib;shell32.lib;DXGI.lib;D3D12.lib;dxguid.lib;advapi32.lib;DirectXTex.lib;D3DCompiler.lib;Shlwapi.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)ThirdPartyLibraries\Assimp\$(Configuration)\;$(SolutionDir)ThirdPartyLibraries\DirectXTex\DirectXTex\Bin\Desktop_2019_Win10\$(Platform)\$(Configuration)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y /d "$(SolutionDir)ThirdPartyLibraries\Assimp\$(Configuration)\assimp-vc142-mtd.dll" "$(OutDir)"</Command>
+      <Command>xcopy /y /d "$(SolutionDir)ThirdPartyLibraries\Assimp\$(Configuration)\assimp-vc142-mt.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
     <FxCompile>
       <ShaderModel>5.1</ShaderModel>
@@ -207,6 +207,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Sources\OcclusionQueryTest.cpp" />
     <ClCompile Include="Sources\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -233,6 +234,18 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Sources\shaders\OcclusionQueryTestPS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Sources\shaders\OcclusionQueryTestVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="Sources\shaders\PixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>

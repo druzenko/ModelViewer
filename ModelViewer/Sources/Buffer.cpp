@@ -2,41 +2,46 @@
 #include "Buffer.h"
 #include "Utility.h"
 
-Buffer::Buffer(UINT64 elementsCount, UINT64 elementSize, const void* data)
+Buffer::Buffer(UINT64 elementsCount, UINT64 elementSize, const void* data, D3D12_RESOURCE_STATES state)
     : mSizeInBytes(elementsCount* elementSize)
+    , mElementsCount(elementsCount)
     , mElementSizeInBytes(elementSize)
 {
     D3D12_RESOURCE_DESC bufferDesc = CD3DX12_RESOURCE_DESC::Buffer(mSizeInBytes);
     D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-    if (SUCCEEDED(Graphics::g_Device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &bufferDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m_pResource))))
+    if (SUCCEEDED(Graphics::g_Device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &bufferDesc, state, nullptr, IID_PPV_ARGS(&m_pResource))))
     {
         m_GpuVirtualAddress = m_pResource->GetGPUVirtualAddress();
+        mFormat = m_pResource->GetDesc().Format;
 
-        D3D12_SUBRESOURCE_DATA subresource;
-        subresource.RowPitch = mSizeInBytes;
-        subresource.SlicePitch = subresource.RowPitch;
-        subresource.pData = data;
-
-        Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource;
-        heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-        if (SUCCEEDED(Graphics::g_Device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &bufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&intermediateResource))))
+        if (data)
         {
-            Graphics::g_CommandList->Reset(Graphics::g_CommandAllocators[Graphics::g_CurrentBackBufferIndex].Get(), nullptr);
+            D3D12_SUBRESOURCE_DATA subresource;
+            subresource.RowPitch = mSizeInBytes;
+            subresource.SlicePitch = subresource.RowPitch;
+            subresource.pData = data;
 
-            UpdateSubresources(Graphics::g_CommandList.Get(), m_pResource.Get(), intermediateResource.Get(), 0, 0, 1, &subresource);
+            Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource;
+            heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+            if (SUCCEEDED(Graphics::g_Device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &bufferDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&intermediateResource))))
+            {
+                Graphics::g_CommandList->Reset(Graphics::g_CommandAllocators[Graphics::g_CurrentBackBufferIndex].Get(), nullptr);
 
-            Graphics::g_CommandList->Close();
+                UpdateSubresources(Graphics::g_CommandList.Get(), m_pResource.Get(), intermediateResource.Get(), 0, 0, 1, &subresource);
 
-            ID3D12CommandList* const commandLists[] = { Graphics::g_CommandList.Get() };
-            Graphics::g_CommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+                Graphics::g_CommandList->Close();
 
-            Graphics::Flush();
+                ID3D12CommandList* const commandLists[] = { Graphics::g_CommandList.Get() };
+                Graphics::g_CommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
 
-            Utility::Printf(L"Buffer resource created");
-        }
-        else
-        {
-            Utility::Printf(L"Failed to create intermediate buffer resource");
+                Graphics::Flush();
+
+                Utility::Printf(L"Buffer resource created");
+            }
+            else
+            {
+                Utility::Printf(L"Failed to create intermediate buffer resource");
+            }
         }
     }
     else

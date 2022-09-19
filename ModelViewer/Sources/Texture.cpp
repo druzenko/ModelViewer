@@ -49,6 +49,9 @@ Texture::Texture(const std::wstring& aPath)
         D3D12_HEAP_PROPERTIES heapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
         if (SUCCEEDED(Graphics::g_Device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &texDesc, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&m_pResource))))
         {
+            m_GpuVirtualAddress = m_pResource->GetGPUVirtualAddress();
+            mFormat = m_pResource->GetDesc().Format;
+
             UINT64 subresourcesCount = image->GetImageCount();
             std::vector<D3D12_SUBRESOURCE_DATA> subresources(subresourcesCount);
             const DirectX::Image* pImages = image->GetImages();

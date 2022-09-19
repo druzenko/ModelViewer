@@ -7,6 +7,7 @@ namespace Graphics
     void Present(void);
     void Flush(void);
     void Resize(int width, int height);
+    void GPUCrashCallback(HRESULT errorCode);
 
     extern constexpr uint32_t g_SwapChainBufferCount = 3;
     extern constexpr uint32_t g_DisplayWidth = 1920;
@@ -16,6 +17,7 @@ namespace Graphics
     extern Microsoft::WRL::ComPtr<ID3D12Device> g_Device;
     extern Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> g_RTVDescriptorHeap;
     extern Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> g_DSVDescriptorHeap;
+    extern Microsoft::WRL::ComPtr<ID3D12QueryHeap> g_QueryOcclusionHeap;
     extern UINT g_RtvDescriptorSize;
     extern UINT g_SRVDescriptorSize;
     extern Microsoft::WRL::ComPtr<ID3D12Resource> g_BackBuffers[g_SwapChainBufferCount];

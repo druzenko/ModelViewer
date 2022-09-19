@@ -1,6 +1,7 @@
 #pragma once
 
 #include "pch.h"
+#include <winerror.h>
 
 namespace Utility
 {
@@ -47,15 +48,6 @@ namespace Utility
 #undef ASSERT
 #endif
 
-#ifdef SUCCEEDED
-#undef SUCCEEDED
-#endif
-
-#ifdef FAILED
-#undef FAILED
-#endif
-
-
 #ifndef RELEASE
     template<Printable T>
     inline void PrintSubMessage(const T* format, ...)
@@ -90,15 +82,13 @@ namespace Utility
             __debugbreak(); \
         }
 
-#define SUCCEEDED(hr)   (((HRESULT)(hr)) >= S_OK)
-#define FAILED(hr)      (((HRESULT)(hr)) < S_OK)
-
 #define ASSERT_HRESULT( hr, ... ) \
         if (FAILED(hr)) { \
             Utility::Print("\nHRESULT failed in " STRINGIFY_BUILTIN(__FILE__) " @ " STRINGIFY_BUILTIN(__LINE__) "\n"); \
             Utility::PrintSubMessage("hr = 0x%08X", hr); \
             Utility::PrintSubMessage(__VA_ARGS__); \
             Utility::Print("\n"); \
+            Graphics::GPUCrashCallback(hr); \
             __debugbreak(); \
         }
 

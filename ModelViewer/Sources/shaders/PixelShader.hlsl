@@ -1,8 +1,11 @@
 struct PixelShaderInput
 {
-    float4 Position : SV_Position;
-    float3 Normal : NORMAL;
-    float2 TexCoord : TEXCOORD;
+    float4 Position     : SV_Position;
+    float3 TangentVS    : TANGENT;
+    float3 BinormalVS   : BINORMAL;
+    float3 NormalVS     : NORMAL;
+    float3 PositionVS   : POSITION;
+    float2 TexCoord     : TEXCOORD;
 };
  
 Texture2D<float4> Texture : register(t0);

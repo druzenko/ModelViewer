@@ -48,6 +48,9 @@
     <ClCompile Include="Sources\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\OcclusionQueryTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Sources\Application.h">
@@ -92,6 +95,12 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Sources\shaders\PixelShader.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Sources\shaders\OcclusionQueryTestPS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Sources\shaders\OcclusionQueryTestVS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

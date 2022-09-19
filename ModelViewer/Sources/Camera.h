@@ -4,7 +4,7 @@
 
 constexpr float gYaw = 90.0f;
 constexpr float gPitch = 0.0f;
-constexpr float gSpeed = 1.0f;
+constexpr float gSpeed = 100.0f;
 constexpr float gSensitivity = 0.1f;
 constexpr float gZoom = 45.0f;
 
