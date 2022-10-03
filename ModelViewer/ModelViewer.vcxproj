@@ -223,6 +223,7 @@
     <ClInclude Include="Sources\Camera.h" />
     <ClInclude Include="Sources\GPUResource.h" />
     <ClInclude Include="Sources\Graphics.h" />
+    <ClInclude Include="Sources\Material.h" />
     <ClInclude Include="Sources\Mesh.h" />
     <ClInclude Include="Sources\Model.h" />
     <ClInclude Include="Sources\pch.h" />

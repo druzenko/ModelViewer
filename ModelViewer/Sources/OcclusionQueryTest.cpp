@@ -49,7 +49,7 @@ public:
     void OnMouseMoved(int aDeltaX, int aDeltaY) override;
 };
 
-CREATE_APPLICATION(OcclusionQueryTest)
+//CREATE_APPLICATION(OcclusionQueryTest)
 
 OcclusionQueryTest::OcclusionQueryTest()
     : mCamera(DirectX::XMVectorSet(0, 0, -5, 1), DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f), gYaw, gPitch)

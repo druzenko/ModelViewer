@@ -11,7 +11,7 @@ namespace Utility
     template<Printable T>
     inline void Print(const T* message)
     {
-        if constexpr (std::is_same_v<std::remove_const<T>::type, char> == true)
+        if constexpr (std::is_same_v<typename std::remove_const<T>::type, char>)
         {
             OutputDebugStringA(message);
             OutputDebugStringA("\n");

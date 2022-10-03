@@ -2,6 +2,8 @@
 #include "Application.h"
 #include "Model.h"
 #include "Camera.h"
+#include "Material.h"
+#include <assimp/scene.h>
 
 #if _DEBUG
 #include "pix3.h"
@@ -30,6 +32,9 @@ class ModelViewer : public IApplication
 
     Model m_Model;
 
+    Material mMaterial;
+    Buffer mMaterialCBV;
+
     float m_LastFrameTime;
     float m_CameraSpeed = 10.0f;
 
@@ -49,7 +54,7 @@ public:
     void OnMouseMoved(int aDeltaX, int aDeltaY) override;
 };
 
-//CREATE_APPLICATION(ModelViewer)
+CREATE_APPLICATION(ModelViewer)
 
 ModelViewer::ModelViewer()
     : mCamera(DirectX::XMVectorSet(0, 10, -15, 1), DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 1.0f), gYaw, gPitch)
@@ -96,13 +101,15 @@ void ModelViewer::Startup(void)
         //D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
 
     // A single 32-bit constant root parameter that is used by the vertex shader.
-    CD3DX12_ROOT_PARAMETER1 rootParameters[2];
+    CD3DX12_ROOT_PARAMETER1 rootParameters[3];
     rootParameters[0].InitAsConstants(sizeof(Transform) / sizeof(float), 0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
 
     CD3DX12_DESCRIPTOR_RANGE1 range;
-    range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0);
+    range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, AI_TEXTURE_TYPE_MAX, 0);
 
     rootParameters[1].InitAsDescriptorTable(1, &range, D3D12_SHADER_VISIBILITY_PIXEL);
+
+    rootParameters[2].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
 
     CD3DX12_STATIC_SAMPLER_DESC samplerDesc;
     samplerDesc.Init(0, D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT);
@@ -153,6 +160,9 @@ void ModelViewer::Startup(void)
     m_ModelMatrix = DirectX::XMMatrixScaling(0.01, 0.01, 0.01);
 
     m_ScissorRect = CD3DX12_RECT(0, 0, LONG_MAX, LONG_MAX);
+
+    mMaterial.AlphaThreshold = 0.1;
+    mMaterialCBV = Buffer(sizeof(Material) / sizeof(float), sizeof(float), &mMaterial);
 }
 
 void ModelViewer::Cleanup(void)
@@ -277,6 +287,7 @@ void ModelViewer::RenderScene(void)
     transform.MV = XMMatrixMultiply(m_ModelMatrix, mCamera.getViewMatrix());
     transform.MVP = XMMatrixMultiply(transform.MV, m_ProjectionMatrix);
     Graphics::g_CommandList->SetGraphicsRoot32BitConstants(0, sizeof(Transform) / sizeof(float), &transform, 0);
+    Graphics::g_CommandList->SetGraphicsRootConstantBufferView(2, mMaterialCBV->GetGPUVirtualAddress());
 
     m_Model.Render(Graphics::g_CommandList, 1);
 
