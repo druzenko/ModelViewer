@@ -37,7 +37,7 @@ Mesh Model::ProcessMesh(const aiMesh* aMesh, const aiScene* aScene)
 {
 	std::vector<Vertex> vertices(aMesh->mNumVertices);
 	std::vector<unsigned int> indices;
-	std::vector<Texture*> textures;
+	std::vector<Texture*> textures(AI_TEXTURE_TYPE_MAX);
 
 	for (unsigned int i = 0; i < aMesh->mNumVertices; ++i)
 	{
@@ -76,30 +76,26 @@ Mesh Model::ProcessMesh(const aiMesh* aMesh, const aiScene* aScene)
 	{
 		aiMaterial* material = aScene->mMaterials[aMesh->mMaterialIndex];
 
-		std::vector<Texture*> materialTextures;
-
-		for (unsigned int textureType = aiTextureType_NONE; textureType < AI_TEXTURE_TYPE_MAX; ++textureType)
+		for (unsigned int textureType = aiTextureType_NONE + 1; textureType < AI_TEXTURE_TYPE_MAX; ++textureType)
 		{
-			materialTextures = LoadMaterialTextures(material, (aiTextureType)textureType);
-			textures.insert(textures.end(), materialTextures.begin(), materialTextures.end());
+			LoadMaterialTextures(material, (aiTextureType)textureType, textures);
 		}
 	}
 
 	return Mesh(Buffer(vertices.size(), sizeof(Vertex), vertices.data()), Buffer(indices.size(), sizeof(unsigned int), indices.data()), std::move(textures));
 }
 
-std::vector<Texture*> Model::LoadMaterialTextures(const aiMaterial* aMaterial, aiTextureType aTextureType)
+void Model::LoadMaterialTextures(const aiMaterial* aMaterial, aiTextureType aTextureType, std::vector<Texture*>& aTextures)
 {
-	std::vector<Texture*> textures;
-	for (unsigned int i = 0; i < aMaterial->GetTextureCount(aTextureType); ++i)
+	ASSERT(aMaterial->GetTextureCount(aTextureType) < 2, "Material has more than one texture of the same type.");
+	if (aMaterial->GetTextureCount(aTextureType))
 	{
 		aiString string;
-		aMaterial->GetTexture(aTextureType, i, &string);
+		aMaterial->GetTexture(aTextureType, 0, &string);
 		std::string fileName = string.C_Str();
 		std::wstring texturePath = mDirectory + std::wstring(fileName.begin(), fileName.end());
-		textures.emplace_back(Texture::FindOrCreateTexture(texturePath));
+		aTextures[aTextureType] = Texture::FindOrCreateTexture(texturePath);
 	}
-	return textures;
 }
 
 void Model::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList, UINT rootParameterIndex) const

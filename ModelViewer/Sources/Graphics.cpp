@@ -130,6 +130,8 @@ namespace Graphics
             break;
         }
     }
+#else
+    void GPUCrashCallback(HRESULT errorCode) {}
 #endif
 
     uint32_t GetVendorIdFromDevice(ID3D12Device* pDevice)

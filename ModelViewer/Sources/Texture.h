@@ -34,5 +34,9 @@ private:
     uint32_t m_Depth;
     DXGI_FORMAT m_Format;
     D3D12_CPU_DESCRIPTOR_HANDLE m_hCpuDescriptorHandle;
+
+#ifdef _DEBUG
+    std::wstring mName;
+#endif
 };
 
