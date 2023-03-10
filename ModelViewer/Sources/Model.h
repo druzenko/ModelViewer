@@ -10,15 +10,20 @@ class Model
 	std::vector<Mesh> mMeshes;
 	std::wstring mDirectory;
 
+#ifdef _DEBUG
+	std::string mName;
+#endif // _DEBUG
+
 private:
 	void LoadModel(const std::string& aPath);
 	void ProcessNode(const aiNode* aNode, const aiScene* aScene);
 	Mesh ProcessMesh(const aiMesh* aMesh, const aiScene* aScene);
+	void ProcessMaterials(const aiScene* aScene);
 	void LoadMaterialTextures(const aiMaterial* aMaterial, aiTextureType aTextureType, std::vector<Texture*>& aTextures);
 
 public:
 	Model() {}
 	Model(const std::string& aPath);
-	void Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList, UINT rootParameterIndex) const;
+	void Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList, UINT aSRVRootParameterIndex, UINT aMaterialIDRootParameterIndex) const;
 };
 

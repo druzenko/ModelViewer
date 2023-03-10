@@ -10,7 +10,8 @@ public:
     //Texture(D3D12_CPU_DESCRIPTOR_HANDLE Handle) : m_hCpuDescriptorHandle(Handle) {}
     static Texture* FindOrCreateTexture(const std::wstring& aPath);
 
-    void CreateSRV(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> SRVDescriptorHeap, UINT offset) const;
+    void CreateSRV(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> SRVDescriptorHeap, UINT offset) const override;
+    static void CreateEmptySRV(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> SRVDescriptorHeap, UINT offset);
 
     virtual void Destroy() override
     {

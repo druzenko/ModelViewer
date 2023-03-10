@@ -3,6 +3,7 @@
 #include "Model.h"
 #include "Camera.h"
 #include "Material.h"
+#include "Light.h"
 #include <assimp/scene.h>
 
 #if _DEBUG
@@ -17,10 +18,18 @@ struct Transform
     DirectX::XMMATRIX MV;
 };
 
+struct PSRootConstants
+{
+    UINT32 LightsCount;
+};
+
 class ModelViewer : public IApplication
 {
     DirectX::XMMATRIX m_ModelMatrix;
     DirectX::XMMATRIX m_ProjectionMatrix;
+    Transform m_Transform;
+
+    PSRootConstants m_PSRootConstants;
 
     D3D12_VIEWPORT m_Viewport;
     D3D12_RECT m_ScissorRect;
@@ -32,15 +41,12 @@ class ModelViewer : public IApplication
 
     Model m_Model;
 
-    Material mMaterial;
-    Buffer mMaterialCBV;
+    Buffer mMaterialsCBV;
 
     float m_LastFrameTime;
     float m_CameraSpeed = 10.0f;
 
-    float mLastDeltaX = Graphics::g_DisplayWidth / 2;
-    float mLastDeltaY = Graphics::g_DisplayWidth / 2;
-    bool mIsFirstMouseMove = true;
+    bool mIsDone = false;
 
 public:
 
@@ -52,6 +58,7 @@ public:
     void RenderScene(void) override;
     void OnKeyEvent(const KeyEvent& keyEvent) override;
     void OnMouseMoved(int aDeltaX, int aDeltaY) override;
+    bool IsDone() override { return mIsDone; }
 };
 
 CREATE_APPLICATION(ModelViewer)
@@ -64,9 +71,6 @@ ModelViewer::ModelViewer()
 
 void ModelViewer::Startup(void)
 {
-    m_Model = Model("../../Scenes/sponza/sponza.obj");
-    //m_Model = Model("../../Scenes/nanosuit/nanosuit.obj");
-
     // Load the vertex shader.
     Microsoft::WRL::ComPtr<ID3DBlob> vertexShaderBlob;
     ASSERT_HRESULT(D3DReadFileToBlob(L"VertexShader.cso", &vertexShaderBlob), "Vertex shader compilation failed");
@@ -79,7 +83,7 @@ void ModelViewer::Startup(void)
     D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
         { "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
         { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
     };
@@ -101,15 +105,24 @@ void ModelViewer::Startup(void)
         //D3D12_ROOT_SIGNATURE_FLAG_DENY_PIXEL_SHADER_ROOT_ACCESS;
 
     // A single 32-bit constant root parameter that is used by the vertex shader.
-    CD3DX12_ROOT_PARAMETER1 rootParameters[3];
+    CD3DX12_ROOT_PARAMETER1 rootParameters[6];
     rootParameters[0].InitAsConstants(sizeof(Transform) / sizeof(float), 0, 0, D3D12_SHADER_VISIBILITY_VERTEX);
 
-    CD3DX12_DESCRIPTOR_RANGE1 range;
-    range.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, AI_TEXTURE_TYPE_MAX, 0);
+    CD3DX12_DESCRIPTOR_RANGE1 ranges[2];
+    ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MATERIAL_TEXTURES_COUNT, 10);
+    ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, MATERIAL_TEXTURES_COUNT + 10);
+    //ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
 
-    rootParameters[1].InitAsDescriptorTable(1, &range, D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[1].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
 
-    rootParameters[2].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL);
+    rootParameters[2].InitAsConstantBufferView(1, 0, D3D12_ROOT_DESCRIPTOR_FLAG_NONE, D3D12_SHADER_VISIBILITY_PIXEL); 
+
+    rootParameters[3].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
+    //rootParameters[4].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_PIXEL); // not use anymore
+
+    rootParameters[4].InitAsConstants(1, 2, 0, D3D12_SHADER_VISIBILITY_PIXEL);
+
+    rootParameters[5].InitAsConstants(sizeof(PSRootConstants) / sizeof(float), 3, 0, D3D12_SHADER_VISIBILITY_PIXEL);
 
     CD3DX12_STATIC_SAMPLER_DESC samplerDesc;
     samplerDesc.Init(0, D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT);
@@ -157,12 +170,26 @@ void ModelViewer::Startup(void)
     ASSERT_HRESULT(device2->CreatePipelineState(&pipelineStateStreamDesc, IID_PPV_ARGS(&m_PipelineState)), "Failed to create pipline state object.");
 
     m_ModelMatrix = DirectX::XMMatrixIdentity();
-    m_ModelMatrix = DirectX::XMMatrixScaling(0.01, 0.01, 0.01);
+    //m_ModelMatrix = DirectX::XMMatrixScaling(0.01, 0.01, 0.01);
 
     m_ScissorRect = CD3DX12_RECT(0, 0, LONG_MAX, LONG_MAX);
 
-    mMaterial.AlphaThreshold = 0.1;
-    mMaterialCBV = Buffer(sizeof(Material) / sizeof(float), sizeof(float), &mMaterial);
+    m_Model = Model("../../Scenes/sponza/sponza.obj");
+    //m_Model = Model("../../Scenes/nanosuit/nanosuit.obj");
+
+    D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc = {};
+    descriptorHeapDesc.NumDescriptors = Materials::GetMaterialCount() * MATERIAL_TEXTURES_COUNT + 2;
+    descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+    descriptorHeapDesc.NodeMask = 0;
+    descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+    ASSERT_HRESULT(Graphics::g_Device->CreateDescriptorHeap(&descriptorHeapDesc, IID_PPV_ARGS(&Graphics::g_SRVDescriptorHeap)), "Failed to create SRV descriptor heap");
+
+    Materials::CreateMaterialTexturesSRV();
+
+    Lightning::Startup();
+
+    mMaterialsCBV = Buffer(L"Materials CBV", Materials::GetMaterialCount(), sizeof(MaterialParams), Materials::GetMaterialParams().data());
+    //mMaterialsCBV.CreateSRV(Graphics::g_SRVDescriptorHeap, Materials::GetMaterialCount() * MATERIAL_TEXTURES_COUNT + 1);
 }
 
 void ModelViewer::Cleanup(void)
@@ -172,20 +199,7 @@ void ModelViewer::Cleanup(void)
 
 void ModelViewer::OnMouseMoved(int aDeltaX, int aDeltaY)
 {
-    if (mIsFirstMouseMove)
-    {
-        mLastDeltaX = aDeltaX;
-        mLastDeltaY = aDeltaY;
-        mIsFirstMouseMove = false;
-    }
-
-    float offsetX = aDeltaX - mLastDeltaX;
-    float offsetY = mLastDeltaY - aDeltaY;
-
-    mLastDeltaX = aDeltaX;
-    mLastDeltaY = aDeltaY;
-
-    mCamera.processMouseMovement(offsetX, offsetY);
+    mCamera.processMouseMovement(aDeltaX, -aDeltaY);
 }
 
 void ModelViewer::OnKeyEvent(const KeyEvent& keyEvent)
@@ -206,6 +220,13 @@ void ModelViewer::OnKeyEvent(const KeyEvent& keyEvent)
         case KeyEvent::KeyCode::D:
             mCamera.processKeyboard(Camera::eMovementDirection::RIGHT, m_LastFrameTime);
             break;
+
+        case KeyEvent::KeyCode::F4:
+            if (keyEvent.Alt)
+            {
+                mIsDone = true;
+            }
+            break;
         default:
             break;
         }
@@ -219,87 +240,63 @@ void ModelViewer::Update(double deltaT)
     m_LastFrameTime = deltaT;
 
     float aspectRatio = Graphics::g_DisplayWidth / static_cast<float>(Graphics::g_DisplayHeight);
-    m_ProjectionMatrix = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(Graphics::m_FoV), aspectRatio, 0.1f, 100.0f);
+    m_ProjectionMatrix = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(Graphics::m_FoV), aspectRatio, 10, 10000.0f);
 
     m_Viewport = CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(Graphics::g_DisplayWidth), static_cast<float>(Graphics::g_DisplayHeight));
+
+    m_Transform.MV = XMMatrixMultiply(m_ModelMatrix, mCamera.getViewMatrix());
+    m_Transform.MVP = XMMatrixMultiply(m_Transform.MV, m_ProjectionMatrix);
 }
 
 void ModelViewer::RenderScene(void)
 {
-    /*
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator = Graphics::g_CommandAllocators[Graphics::g_CurrentBackBufferIndex];
+    Lightning::Update(m_Transform.MV);
+
+    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator = Graphics::g_GraphicsCommandAllocators[Graphics::g_CurrentBackBufferIndex];
     Microsoft::WRL::ComPtr<ID3D12Resource> backBuffer = Graphics::g_BackBuffers[Graphics::g_CurrentBackBufferIndex];
 
     commandAllocator->Reset();
-    Graphics::g_CommandList->Reset(commandAllocator.Get(), nullptr);
-
-#if _DEBUG
-    //PIXBeginEvent(Graphics::g_CommandList.Get(), 0, "Begin");
-#endif
+    Graphics::g_GraphicsCommandList->Reset(commandAllocator.Get(), nullptr);
 
     CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(backBuffer.Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    Graphics::g_CommandList->ResourceBarrier(1, &barrier);
-
-    FLOAT clearColor[] = {0.4f, 0.6f, 0.9f, 1.0f};
-    CD3DX12_CPU_DESCRIPTOR_HANDLE rtv(Graphics::g_RTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), Graphics::g_CurrentBackBufferIndex, Graphics::g_RtvDescriptorSize);
-    Graphics::g_CommandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
-
-    barrier = CD3DX12_RESOURCE_BARRIER::Transition(backBuffer.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-    Graphics::g_CommandList->ResourceBarrier(1, &barrier);
-
-    Graphics::g_CommandList->Close();
-
-#if _DEBUG
-    //PIXEndEvent(Graphics::g_CommandList.Get());
-#endif
-
-    ID3D12CommandList* const commandLists[] = { Graphics::g_CommandList.Get() };
-    Graphics::g_CommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
-    */
-
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator = Graphics::g_CommandAllocators[Graphics::g_CurrentBackBufferIndex];
-    Microsoft::WRL::ComPtr<ID3D12Resource> backBuffer = Graphics::g_BackBuffers[Graphics::g_CurrentBackBufferIndex];
-
-    commandAllocator->Reset();
-    Graphics::g_CommandList->Reset(commandAllocator.Get(), nullptr);
-
-#if _DEBUG
-    //PIXBeginEvent(Graphics::g_CommandList.Get(), 0, "Begin");
-#endif
-
-    CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(backBuffer.Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    Graphics::g_CommandList->ResourceBarrier(1, &barrier);
+    Graphics::g_GraphicsCommandList->ResourceBarrier(1, &barrier);
 
     FLOAT clearColor[] = { 0.5f, 0.5f, 0.5f, 1.0f };
     CD3DX12_CPU_DESCRIPTOR_HANDLE rtv(Graphics::g_RTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), Graphics::g_CurrentBackBufferIndex, Graphics::g_RtvDescriptorSize);
-    Graphics::g_CommandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
+    Graphics::g_GraphicsCommandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
 
     CD3DX12_CPU_DESCRIPTOR_HANDLE dsv(Graphics::g_DSVDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-    Graphics::g_CommandList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, 1, 0, 0, nullptr);
+    Graphics::g_GraphicsCommandList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, 1, 0, 0, nullptr);
 
-    Graphics::g_CommandList->SetPipelineState(m_PipelineState.Get());
-    Graphics::g_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
-    Graphics::g_CommandList->RSSetViewports(1, &m_Viewport);
-    Graphics::g_CommandList->RSSetScissorRects(1, &m_ScissorRect);
-    Graphics::g_CommandList->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
+    Graphics::g_GraphicsCommandList->SetPipelineState(m_PipelineState.Get());
+    Graphics::g_GraphicsCommandList->SetGraphicsRootSignature(m_RootSignature.Get());
+    Graphics::g_GraphicsCommandList->RSSetViewports(1, &m_Viewport);
+    Graphics::g_GraphicsCommandList->RSSetScissorRects(1, &m_ScissorRect);
+    Graphics::g_GraphicsCommandList->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
+    Graphics::g_GraphicsCommandList->SetGraphicsRoot32BitConstants(0, sizeof(Transform) / sizeof(float), &m_Transform, 0);
 
-    Transform transform;
-    transform.MV = XMMatrixMultiply(m_ModelMatrix, mCamera.getViewMatrix());
-    transform.MVP = XMMatrixMultiply(transform.MV, m_ProjectionMatrix);
-    Graphics::g_CommandList->SetGraphicsRoot32BitConstants(0, sizeof(Transform) / sizeof(float), &transform, 0);
-    Graphics::g_CommandList->SetGraphicsRootConstantBufferView(2, mMaterialCBV->GetGPUVirtualAddress());
+    Graphics::g_GraphicsCommandList->SetGraphicsRootConstantBufferView(2, mMaterialsCBV.GetGpuVirtualAddress());
 
-    m_Model.Render(Graphics::g_CommandList, 1);
+    ID3D12DescriptorHeap* heaps[] = { Graphics::g_SRVDescriptorHeap.Get()  };
+    Graphics::g_GraphicsCommandList->SetDescriptorHeaps(1, heaps);
+
+    CD3DX12_GPU_DESCRIPTOR_HANDLE srvHandle;
+    srvHandle.InitOffsetted(Graphics::g_SRVDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), Materials::GetMaterialCount() * MATERIAL_TEXTURES_COUNT * Graphics::g_SRVDescriptorSize);
+    Graphics::g_GraphicsCommandList->SetGraphicsRootDescriptorTable(3, srvHandle);
+
+    //srvHandle.InitOffsetted(Graphics::g_SRVDescriptorHeap->GetGPUDescriptorHandleForHeapStart(), ((Materials::GetMaterialCount() * MATERIAL_TEXTURES_COUNT) + 1) * Graphics::g_SRVDescriptorSize);
+    //Graphics::g_CommandList->SetGraphicsRootDescriptorTable(4, srvHandle);
+
+    m_PSRootConstants.LightsCount = Lightning::GetLightsCount();
+    Graphics::g_GraphicsCommandList->SetGraphicsRoot32BitConstants(5, sizeof(PSRootConstants) / sizeof(float), &m_PSRootConstants, 0);
+
+    m_Model.Render(Graphics::g_GraphicsCommandList, 1, 4);
 
     barrier = CD3DX12_RESOURCE_BARRIER::Transition(backBuffer.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-    Graphics::g_CommandList->ResourceBarrier(1, &barrier);
+    Graphics::g_GraphicsCommandList->ResourceBarrier(1, &barrier);
 
-    Graphics::g_CommandList->Close();
+    Graphics::g_GraphicsCommandList->Close();
 
-#if _DEBUG
-    //PIXEndEvent(Graphics::g_CommandList.Get());
-#endif
-
-    ID3D12CommandList* const commandLists[] = { Graphics::g_CommandList.Get() };
-    Graphics::g_CommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+    ID3D12CommandList* const commandLists[] = { Graphics::g_GraphicsCommandList.Get() };
+    Graphics::g_GraphicsCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
 }
