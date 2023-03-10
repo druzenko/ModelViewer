@@ -145,6 +145,11 @@ float4 DoSpecular(Light light, MaterialParams material, float4 V, float4 L, floa
     return light.Color * pow(RdotV, material.SpecularPower);
 }
 
+float DoAttenuation(Light light, float distance)
+{
+    return 1.0 - smoothstep(0.75 * light.Range, light.Range, distance);
+}
+
 LightingResult DoDirectionalLight(Light light, MaterialParams material, float4 V, float4 P, float4 N)
 {
     LightingResult result;
@@ -154,6 +159,22 @@ LightingResult DoDirectionalLight(Light light, MaterialParams material, float4 V
     result.Diffuse = DoDiffuse(light, L, N) * light.Intensity;
     result.Specular = DoSpecular(light, material, V, L, N) * light.Intensity;
 
+    return result;
+}
+
+LightingResult DoPointLight(Light light, MaterialParams material, float4 V, float4 P, float4 N)
+{
+    LightingResult result;
+    
+    float4 L = float4(light.PositionVS, 1.0) - P;
+    float distance = length(L);
+    L /= distance;
+    
+    float attenuation = DoAttenuation(light, distance);
+    
+    result.Diffuse = DoDiffuse(light, L, N) * light.Intensity * attenuation;
+    result.Specular = DoSpecular(light, material, V, L, N) * light.Intensity * attenuation;
+    
     return result;
 }
 
@@ -186,7 +207,7 @@ LightingResult DoLighting(StructuredBuffer<Light> lights, MaterialParams materia
         break;
         case POINT_LIGHT:
         {
-            //result = DoPointLight(lights[i], material, V, P, N);
+            result = DoPointLight(lights[i], material, V, P, N);
         }
         break;
         case SPOT_LIGHT:
