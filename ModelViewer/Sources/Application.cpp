@@ -44,7 +44,7 @@ bool UpdateApplication(IApplication& app)
 
     Graphics::Present();
 
-    return true;
+    return !app.IsDone();
 }
 
 void TerminateApplication(IApplication& app)
@@ -69,6 +69,23 @@ int RunApplication(IApplication& app, const wchar_t* className, HINSTANCE hInst,
 
     Microsoft::WRL::Wrappers::RoInitializeWrapper InitializeWinRT(RO_INIT_MULTITHREADED);
     //ASSERT(InitializeWinRT, "Windows runtime was not initialize.");
+
+    RAWINPUTDEVICE Rid[2];
+
+    Rid[0].usUsagePage = 0x01;          // HID_USAGE_PAGE_GENERIC
+    Rid[0].usUsage = 0x02;              // HID_USAGE_GENERIC_MOUSE
+    Rid[0].dwFlags = 0;    // adds mouse and also ignores legacy mouse messages
+    Rid[0].hwndTarget = g_hWnd;
+
+    Rid[1].usUsagePage = 0x01;          // HID_USAGE_PAGE_GENERIC
+    Rid[1].usUsage = 0x06;              // HID_USAGE_GENERIC_KEYBOARD
+    Rid[1].dwFlags = RIDEV_NOLEGACY;    // adds keyboard and also ignores legacy keyboard messages
+    Rid[1].hwndTarget = g_hWnd;
+
+    if (RegisterRawInputDevices(Rid, 1, sizeof(Rid[0])) == FALSE)
+    {
+        ASSERT(false, "Registration failed.");//Call GetLastError for the cause of the error
+    }
 
     WNDCLASSEX wcex;
     wcex.cbSize = sizeof(WNDCLASSEX);
@@ -101,13 +118,19 @@ int RunApplication(IApplication& app, const wchar_t* className, HINSTANCE hInst,
     do
     {
         MSG msg = {};
+        bool isDone = false;
         while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
+            isDone |= msg.message == WM_QUIT;
         }
-        if (msg.message == WM_QUIT)
+
+        if (isDone)
+        {
             break;
+        }
+       
     } while (UpdateApplication(app));	// returns false to quit loop
 
     TerminateApplication(app);
@@ -130,12 +153,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
 
     case WM_DESTROY:
-    case WM_CLOSE:
+    //case WM_CLOSE:
         PostQuitMessage(0);
         break;
 
     case WM_MOUSEMOVE:
-        g_App->OnMouseMoved(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+        //g_App->OnMouseMoved(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
         break;
 
     case WM_SYSKEYDOWN:
@@ -179,6 +202,40 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
 
         g_App->OnKeyEvent({ static_cast<KeyEvent::KeyCode>(wParam), KeyEvent::KeyState::Released, c, control, shift, alt });
+    }
+    case WM_INPUT:
+    {
+        //https://learn.microsoft.com/uk-ua/windows/win32/inputdev/using-raw-input?redirectedfrom=MSDN
+
+        HRAWINPUT inputHandle = reinterpret_cast<HRAWINPUT>(lParam);
+        USHORT inputCode = GET_RAWINPUT_CODE_WPARAM(wParam);
+
+        if (inputCode != RIM_INPUT && inputCode != RIM_INPUTSINK)
+            break;
+
+
+        UINT dwSize;
+
+        GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
+        LPBYTE lpb = reinterpret_cast<LPBYTE>(alloca(sizeof(BYTE) * dwSize));
+        if (lpb == NULL)
+        {
+            return 0;
+        }
+
+        if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
+            OutputDebugString(TEXT("GetRawInputData does not return correct size !\n"));
+
+        RAWINPUT* raw = (RAWINPUT*)lpb;
+
+        if (raw->header.dwType == RIM_TYPEMOUSE)
+        {
+            g_App->OnMouseMoved(raw->data.mouse.lLastX, raw->data.mouse.lLastY);
+        }
+
+        //if (inputCode == RIM_INPUT)
+        //return DefWindowProc(hWnd, message, wParam, lParam);
+        break;
     }
     break;
     default:

@@ -77,8 +77,8 @@ void OcclusionQueryTest::Startup(void)
                                             -0.5f, -0.5f, 0.4999f,     0.0f, 0.0f, 0.0f, 1.0f
     };
     std::array<unsigned short, 6> quadsIndices = { 0, 1, 2, 2, 3, 0 };
-    mQuadsVertexBuffer = Buffer(quadsVertices.size() / 7, sizeof(float) * 7, quadsVertices.data());
-    mQuadsIndexBuffer = Buffer(quadsIndices.size(), sizeof(unsigned short), quadsIndices.data());
+    mQuadsVertexBuffer = Buffer(L"", quadsVertices.size() / 7, sizeof(float) * 7, quadsVertices.data());
+    mQuadsIndexBuffer = Buffer(L"", quadsIndices.size(), sizeof(unsigned short), quadsIndices.data());
 
     mQuadsVertexBufferView.BufferLocation = mQuadsVertexBuffer.GetGpuVirtualAddress();
     mQuadsVertexBufferView.SizeInBytes = mQuadsVertexBuffer.GetSizeInBytes();
@@ -89,7 +89,7 @@ void OcclusionQueryTest::Startup(void)
     mQuadsIndexBufferView.SizeInBytes = mQuadsIndexBuffer.GetSizeInBytes();
 
 
-    mQueryResultBuffer = Buffer(1, 8, nullptr, D3D12_RESOURCE_STATE_PREDICATION);
+    mQueryResultBuffer = Buffer(L"", 1, 8, nullptr, D3D12_RESOURCE_STATE_PREDICATION);
 
     // Load the vertex shader.
     Microsoft::WRL::ComPtr<ID3DBlob> vertexShaderBlob;
@@ -268,65 +268,65 @@ void OcclusionQueryTest::Update(double deltaT)
 
 void OcclusionQueryTest::RenderScene(void)
 {
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator = Graphics::g_CommandAllocators[Graphics::g_CurrentBackBufferIndex];
+    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator = Graphics::g_GraphicsCommandAllocators[Graphics::g_CurrentBackBufferIndex];
     Microsoft::WRL::ComPtr<ID3D12Resource> backBuffer = Graphics::g_BackBuffers[Graphics::g_CurrentBackBufferIndex];
 
     commandAllocator->Reset();
-    ASSERT_HRESULT(Graphics::g_CommandList->Reset(commandAllocator.Get(), m_PipelineState.Get()), "Error: ID3D12GraphicsCommandList::Reset");
+    ASSERT_HRESULT(Graphics::g_GraphicsCommandList->Reset(commandAllocator.Get(), m_PipelineState.Get()), "Error: ID3D12GraphicsCommandList::Reset");
 
     CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(backBuffer.Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    Graphics::g_CommandList->ResourceBarrier(1, &barrier);
+    Graphics::g_GraphicsCommandList->ResourceBarrier(1, &barrier);
 
     FLOAT clearColor[] = { 0.0f, 0.0f, 0.9f, 1.0f };
     CD3DX12_CPU_DESCRIPTOR_HANDLE rtv(Graphics::g_RTVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), Graphics::g_CurrentBackBufferIndex, Graphics::g_RtvDescriptorSize);
-    Graphics::g_CommandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
+    Graphics::g_GraphicsCommandList->ClearRenderTargetView(rtv, clearColor, 0, nullptr);
 
     CD3DX12_CPU_DESCRIPTOR_HANDLE dsv(Graphics::g_DSVDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
-    Graphics::g_CommandList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, 1, 0, 0, nullptr);
+    Graphics::g_GraphicsCommandList->ClearDepthStencilView(dsv, D3D12_CLEAR_FLAG_DEPTH, 1, 0, 0, nullptr);
 
-    Graphics::g_CommandList->SetGraphicsRootSignature(m_RootSignature.Get());
-    Graphics::g_CommandList->RSSetViewports(1, &m_Viewport);
-    Graphics::g_CommandList->RSSetScissorRects(1, &m_ScissorRect);
-    Graphics::g_CommandList->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
-    Graphics::g_CommandList->IASetVertexBuffers(0, 1, &mQuadsVertexBufferView);
-    Graphics::g_CommandList->IASetIndexBuffer(&mQuadsIndexBufferView);
-    Graphics::g_CommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    Graphics::g_GraphicsCommandList->SetGraphicsRootSignature(m_RootSignature.Get());
+    Graphics::g_GraphicsCommandList->RSSetViewports(1, &m_Viewport);
+    Graphics::g_GraphicsCommandList->RSSetScissorRects(1, &m_ScissorRect);
+    Graphics::g_GraphicsCommandList->OMSetRenderTargets(1, &rtv, FALSE, &dsv);
+    Graphics::g_GraphicsCommandList->IASetVertexBuffers(0, 1, &mQuadsVertexBufferView);
+    Graphics::g_GraphicsCommandList->IASetIndexBuffer(&mQuadsIndexBufferView);
+    Graphics::g_GraphicsCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
     //Draw far quad
     DirectX::XMMATRIX FarMVP = XMMatrixMultiply(m_FarQuadModelMatrix, mCamera.getViewMatrix());
     FarMVP = XMMatrixMultiply(FarMVP, m_ProjectionMatrix);
-    Graphics::g_CommandList->SetGraphicsRoot32BitConstants(0, sizeof(FarMVP) / sizeof(float), &FarMVP, 0);
-    Graphics::g_CommandList->SetPredication(mQueryResultBuffer.GetResource(), 0, D3D12_PREDICATION_OP_EQUAL_ZERO);
-    Graphics::g_CommandList->DrawIndexedInstanced(mQuadsIndexBufferView.SizeInBytes / sizeof(unsigned short), 1, 0, 0, 0);
+    Graphics::g_GraphicsCommandList->SetGraphicsRoot32BitConstants(0, sizeof(FarMVP) / sizeof(float), &FarMVP, 0);
+    Graphics::g_GraphicsCommandList->SetPredication(mQueryResultBuffer.GetResource(), 0, D3D12_PREDICATION_OP_EQUAL_ZERO);
+    Graphics::g_GraphicsCommandList->DrawIndexedInstanced(mQuadsIndexBufferView.SizeInBytes / sizeof(unsigned short), 1, 0, 0, 0);
 
 
     // Draw near quad
     DirectX::XMMATRIX NearMVP = XMMatrixMultiply(m_NearQuadModelMatrix, mCamera.getViewMatrix());
     NearMVP = XMMatrixMultiply(NearMVP, m_ProjectionMatrix);
-    Graphics::g_CommandList->SetGraphicsRoot32BitConstants(0, sizeof(NearMVP) / sizeof(float), &NearMVP, 0);
-    Graphics::g_CommandList->SetPredication(nullptr, 0, D3D12_PREDICATION_OP_EQUAL_ZERO);
-    Graphics::g_CommandList->DrawIndexedInstanced(mQuadsIndexBufferView.SizeInBytes / sizeof(unsigned short), 1, 0, 4, 0);
+    Graphics::g_GraphicsCommandList->SetGraphicsRoot32BitConstants(0, sizeof(NearMVP) / sizeof(float), &NearMVP, 0);
+    Graphics::g_GraphicsCommandList->SetPredication(nullptr, 0, D3D12_PREDICATION_OP_EQUAL_ZERO);
+    Graphics::g_GraphicsCommandList->DrawIndexedInstanced(mQuadsIndexBufferView.SizeInBytes / sizeof(unsigned short), 1, 0, 4, 0);
 
     // Run the occlusion query with the bounding box quad.
-    Graphics::g_CommandList->SetGraphicsRoot32BitConstants(0, sizeof(FarMVP) / sizeof(float), &FarMVP, 0);
-    Graphics::g_CommandList->SetPipelineState(m_QueryPipelineState.Get());
-    Graphics::g_CommandList->BeginQuery(Graphics::g_QueryOcclusionHeap.Get(), D3D12_QUERY_TYPE_BINARY_OCCLUSION, 0);
-    Graphics::g_CommandList->DrawIndexedInstanced(mQuadsIndexBufferView.SizeInBytes / sizeof(unsigned short), 1, 0, 8, 0);
-    Graphics::g_CommandList->EndQuery(Graphics::g_QueryOcclusionHeap.Get(), D3D12_QUERY_TYPE_BINARY_OCCLUSION, 0);
+    Graphics::g_GraphicsCommandList->SetGraphicsRoot32BitConstants(0, sizeof(FarMVP) / sizeof(float), &FarMVP, 0);
+    Graphics::g_GraphicsCommandList->SetPipelineState(m_QueryPipelineState.Get());
+    Graphics::g_GraphicsCommandList->BeginQuery(Graphics::g_QueryOcclusionHeap.Get(), D3D12_QUERY_TYPE_BINARY_OCCLUSION, 0);
+    Graphics::g_GraphicsCommandList->DrawIndexedInstanced(mQuadsIndexBufferView.SizeInBytes / sizeof(unsigned short), 1, 0, 8, 0);
+    Graphics::g_GraphicsCommandList->EndQuery(Graphics::g_QueryOcclusionHeap.Get(), D3D12_QUERY_TYPE_BINARY_OCCLUSION, 0);
 
     // Resolve the occlusion query and store the results in the query result buffer
     // to be used on the subsequent frame.
     barrier = CD3DX12_RESOURCE_BARRIER::Transition(mQueryResultBuffer.GetResource(), D3D12_RESOURCE_STATE_PREDICATION, D3D12_RESOURCE_STATE_COPY_DEST);
-    Graphics::g_CommandList->ResourceBarrier(1, &barrier);
-    Graphics::g_CommandList->ResolveQueryData(Graphics::g_QueryOcclusionHeap.Get(), D3D12_QUERY_TYPE_BINARY_OCCLUSION, 0, 1, mQueryResultBuffer.GetResource(), 0);
+    Graphics::g_GraphicsCommandList->ResourceBarrier(1, &barrier);
+    Graphics::g_GraphicsCommandList->ResolveQueryData(Graphics::g_QueryOcclusionHeap.Get(), D3D12_QUERY_TYPE_BINARY_OCCLUSION, 0, 1, mQueryResultBuffer.GetResource(), 0);
     barrier = CD3DX12_RESOURCE_BARRIER::Transition(mQueryResultBuffer.GetResource(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PREDICATION);
-    Graphics::g_CommandList->ResourceBarrier(1, &barrier);
+    Graphics::g_GraphicsCommandList->ResourceBarrier(1, &barrier);
 
     barrier = CD3DX12_RESOURCE_BARRIER::Transition(backBuffer.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
-    Graphics::g_CommandList->ResourceBarrier(1, &barrier);
+    Graphics::g_GraphicsCommandList->ResourceBarrier(1, &barrier);
 
-    Graphics::g_CommandList->Close();
+    Graphics::g_GraphicsCommandList->Close();
 
-    ID3D12CommandList* const commandLists[] = { Graphics::g_CommandList.Get() };
-    Graphics::g_CommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+    ID3D12CommandList* const commandLists[] = { Graphics::g_GraphicsCommandList.Get() };
+    Graphics::g_GraphicsCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
 }

@@ -23,21 +23,25 @@ namespace Graphics
 
     uint32_t g_CurrentBackBufferIndex = 0;
     Microsoft::WRL::ComPtr<ID3D12Device> g_Device = nullptr;
-    Microsoft::WRL::ComPtr<ID3D12CommandQueue> g_CommandQueue = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12CommandQueue> g_GraphicsCommandQueue = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12CommandQueue> g_ComputeCommandQueue = nullptr;
     Microsoft::WRL::ComPtr<IDXGISwapChain3> g_SwapChain3;
     UINT g_RtvDescriptorSize = 0;
     UINT g_SRVDescriptorSize = 0;
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> g_RTVDescriptorHeap = nullptr;
     Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> g_DSVDescriptorHeap = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> g_SRVDescriptorHeap = nullptr;
     Microsoft::WRL::ComPtr<ID3D12QueryHeap> g_QueryOcclusionHeap = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> g_BackBuffers[g_SwapChainBufferCount];
     Microsoft::WRL::ComPtr<ID3D12Resource> g_DepthBuffer;
-    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> g_CommandAllocators[g_SwapChainBufferCount];
-    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> g_CommandList = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> g_GraphicsCommandAllocators[g_SwapChainBufferCount];
+    Microsoft::WRL::ComPtr<ID3D12CommandAllocator> g_ComputeCommandAllocators[g_SwapChainBufferCount];
+    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> g_GraphicsCommandList = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> g_ComputeCommandList = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Fence> g_Fence = nullptr;
     HANDLE g_FenceEvent = nullptr;
     uint64_t g_FenceValue = 0;
-    uint64_t g_FrameFenceValues[g_SwapChainBufferCount] = {};
+    //uint64_t g_FrameFenceValues[g_SwapChainBufferCount] = {};
 	
 
     constexpr bool g_UseWarpDriver = false;
@@ -215,9 +219,9 @@ namespace Graphics
         g_Device->CreateDepthStencilView(g_DepthBuffer.Get(), &Desc, g_DSVDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
     }
 
-    uint64_t Signal()
+    uint64_t Signal(Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue)
     {
-        ASSERT_HRESULT(g_CommandQueue->Signal(g_Fence.Get(), ++g_FenceValue), "Error: ID3D12CommandQueue::Signal");
+        ASSERT_HRESULT(commandQueue->Signal(g_Fence.Get(), ++g_FenceValue), "Error: ID3D12CommandQueue::Signal");
         return g_FenceValue;
     }
 
@@ -232,7 +236,9 @@ namespace Graphics
 
     void Flush()
     {
-        Signal();
+        Signal(g_ComputeCommandQueue);
+        WaitForFenceValue();
+        Signal(g_GraphicsCommandQueue);
         WaitForFenceValue();
     }
 
@@ -455,7 +461,11 @@ namespace Graphics
             queueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
             queueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
 
-            SUCCEEDED(g_Device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&g_CommandQueue)));
+            SUCCEEDED(g_Device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&g_GraphicsCommandQueue)));
+
+            queueDesc.Type = D3D12_COMMAND_LIST_TYPE_COMPUTE;
+
+            SUCCEEDED(g_Device->CreateCommandQueue(&queueDesc, IID_PPV_ARGS(&g_ComputeCommandQueue)));
         }
 
         g_TearingSupported = CheckTearingSupport();
@@ -487,7 +497,7 @@ namespace Graphics
             fsSwapChainDesc.Windowed = TRUE;
 
             Microsoft::WRL::ComPtr<IDXGISwapChain1> swapChain = nullptr;
-            SUCCEEDED(dxgiFactory4->CreateSwapChainForHwnd(g_CommandQueue.Get(), g_hWnd, &swapChainDesc, &fsSwapChainDesc, nullptr, &swapChain));
+            SUCCEEDED(dxgiFactory4->CreateSwapChainForHwnd(g_GraphicsCommandQueue.Get(), g_hWnd, &swapChainDesc, &fsSwapChainDesc, nullptr, &swapChain));
             SUCCEEDED(swapChain.As(&g_SwapChain3));
             g_CurrentBackBufferIndex = g_SwapChain3->GetCurrentBackBufferIndex();
         }
@@ -521,14 +531,18 @@ namespace Graphics
         {
             for (int i = 0; i < g_SwapChainBufferCount; ++i)
             {
-                SUCCEEDED(g_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_CommandAllocators[i])));
+                SUCCEEDED(g_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_GraphicsCommandAllocators[i])));
+                SUCCEEDED(g_Device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COMPUTE, IID_PPV_ARGS(&g_ComputeCommandAllocators[i])));
             }
         }
 
         //Create command list
         {
-            SUCCEEDED(g_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_CommandAllocators[g_CurrentBackBufferIndex].Get(), nullptr, IID_PPV_ARGS(&g_CommandList)));
-            SUCCEEDED(g_CommandList->Close());
+            SUCCEEDED(g_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_GraphicsCommandAllocators[g_CurrentBackBufferIndex].Get(), nullptr, IID_PPV_ARGS(&g_GraphicsCommandList)));
+            SUCCEEDED(g_GraphicsCommandList->Close());
+
+            SUCCEEDED(g_Device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COMPUTE, g_ComputeCommandAllocators[g_CurrentBackBufferIndex].Get(), nullptr, IID_PPV_ARGS(&g_ComputeCommandList)));
+            SUCCEEDED(g_ComputeCommandList->Close());
         }
 
         //Create fence
@@ -579,13 +593,15 @@ namespace Graphics
 
         ::CloseHandle(g_FenceEvent);
 
-        g_CommandQueue.Reset();
+        g_GraphicsCommandQueue.Reset();
         g_RTVDescriptorHeap.Reset();
         for (int i = 0; i < g_SwapChainBufferCount; ++i)
         {
-            g_CommandAllocators[i].Reset();
+            g_GraphicsCommandAllocators[i].Reset();
+            g_ComputeCommandAllocators[i].Reset();
         }
-        g_CommandList.Reset();
+        g_GraphicsCommandList.Reset();
+        g_ComputeCommandList.Reset();
         g_Fence.Reset();
         g_Device.Reset();
 
@@ -604,7 +620,7 @@ namespace Graphics
         UINT presentFlags = g_TearingSupported && !g_VSync ? DXGI_PRESENT_ALLOW_TEARING : 0;
         ASSERT_HRESULT(g_SwapChain3->Present(syncInterval, presentFlags), "Error: IDXGISwapChain3::Present");
  
-        g_FrameFenceValues[g_CurrentBackBufferIndex] = Signal();
+        /*g_FrameFenceValues[g_CurrentBackBufferIndex] = */Signal(g_GraphicsCommandQueue);
 
         g_CurrentBackBufferIndex = g_SwapChain3->GetCurrentBackBufferIndex();
 

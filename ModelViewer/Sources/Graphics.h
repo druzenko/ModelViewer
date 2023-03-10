@@ -5,6 +5,8 @@ namespace Graphics
     void Initialize(void);
     void Shutdown(void);
     void Present(void);
+    uint64_t Signal(Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue);
+    void WaitForFenceValue();
     void Flush(void);
     void Resize(int width, int height);
     void GPUCrashCallback(HRESULT errorCode);
@@ -17,14 +19,18 @@ namespace Graphics
     extern Microsoft::WRL::ComPtr<ID3D12Device> g_Device;
     extern Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> g_RTVDescriptorHeap;
     extern Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> g_DSVDescriptorHeap;
+    extern Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> g_SRVDescriptorHeap;
     extern Microsoft::WRL::ComPtr<ID3D12QueryHeap> g_QueryOcclusionHeap;
     extern UINT g_RtvDescriptorSize;
     extern UINT g_SRVDescriptorSize;
     extern Microsoft::WRL::ComPtr<ID3D12Resource> g_BackBuffers[g_SwapChainBufferCount];
     extern Microsoft::WRL::ComPtr<ID3D12Resource> g_DepthBuffer;
-    extern Microsoft::WRL::ComPtr<ID3D12CommandQueue> g_CommandQueue;
-    extern Microsoft::WRL::ComPtr<ID3D12CommandAllocator> g_CommandAllocators[g_SwapChainBufferCount];
-    extern Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> g_CommandList;
+    extern Microsoft::WRL::ComPtr<ID3D12CommandQueue> g_GraphicsCommandQueue;
+    extern Microsoft::WRL::ComPtr<ID3D12CommandQueue> g_ComputeCommandQueue;
+    extern Microsoft::WRL::ComPtr<ID3D12CommandAllocator> g_GraphicsCommandAllocators[g_SwapChainBufferCount];
+    extern Microsoft::WRL::ComPtr<ID3D12CommandAllocator> g_ComputeCommandAllocators[g_SwapChainBufferCount];
+    extern Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> g_GraphicsCommandList;
+    extern Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> g_ComputeCommandList;
 }
 
 
