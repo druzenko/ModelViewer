@@ -27,7 +27,19 @@ static Light CreateDirectionalLight(DirectX::XMFLOAT3 directionWS, DirectX::XMFL
     return light;
 }
 
-static Light CreatePointLight(DirectX::XMFLOAT3 positionWS, DirectX::XMFLOAT3 directionWS, DirectX::XMFLOAT4 color, float intensity)
+static Light CreatePointLight(DirectX::XMFLOAT3 positionWS, DirectX::XMFLOAT3 directionWS, DirectX::XMFLOAT4 color, float intensity, float range)
+{
+    Light light;
+    light.PositionWS = positionWS;
+    light.DirectionWS = directionWS;
+    light.Color = color;
+    light.Range = range;
+    light.Intensity = intensity;
+    light.Type = static_cast<UINT32>(LightType::Point);
+    return light;
+}
+
+static Light CreateSpotLight(DirectX::XMFLOAT3 positionWS, DirectX::XMFLOAT3 directionWS, DirectX::XMFLOAT4 color, float intensity, float range, float spotlightAngle)
 {
     Light light;
     light.PositionWS = positionWS;
@@ -35,14 +47,16 @@ static Light CreatePointLight(DirectX::XMFLOAT3 positionWS, DirectX::XMFLOAT3 di
     light.Color = color;
     light.Range = 300.0f;
     light.Intensity = intensity;
-    light.Type = static_cast<UINT32>(LightType::Point);
+    light.SpotlightAngle = spotlightAngle;
+    light.Type = static_cast<UINT32>(LightType::Spot);
     return light;
 }
 
 static void InitLights()
 {
-    gLights.push_back(CreateDirectionalLight(DirectX::XMFLOAT3(0.0f, -1.0f, -1.0f), DirectX::XMFLOAT4(0.1f, 1.0f, 0.1f, 1.0f), 1.0f));
-    gLights.push_back(CreatePointLight(DirectX::XMFLOAT3(200.0f, 200.0f, 200.0f), DirectX::XMFLOAT3(0.0f, 1.0f, -1.0f), DirectX::XMFLOAT4(1.0f, 0.1f, 0.1f, 1.0f), 1.0f));
+    gLights.push_back(CreateDirectionalLight(DirectX::XMFLOAT3(0.0f, -1.0f, -1.0f), DirectX::XMFLOAT4(0.1f, 1.0f, 0.1f, 1.0f), 0.5f));
+    gLights.push_back(CreatePointLight(DirectX::XMFLOAT3(0.0f, 200.0f, 200.0f), DirectX::XMFLOAT3(0.0f, 1.0f, -1.0f), DirectX::XMFLOAT4(1.0f, 0.1f, 0.1f, 1.0f), 1.0f, 300.0f));
+    gLights.push_back(CreateSpotLight(DirectX::XMFLOAT3(300.0f, 200.0f, 200.0f), DirectX::XMFLOAT3(0.0f, -1.0f, 0.0f), DirectX::XMFLOAT4(0.1f, 0.1f, 1.0f, 1.0f), 1.0f, 300.0f, 30.0f));
 }
 
 namespace Lightning

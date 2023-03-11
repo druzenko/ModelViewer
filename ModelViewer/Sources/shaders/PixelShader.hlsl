@@ -150,6 +150,13 @@ float DoAttenuation(Light light, float distance)
     return 1.0 - smoothstep(0.75 * light.Range, light.Range, distance);
 }
 
+float DoSpotCone(Light light, float4 L)
+{
+    float minCos = cos(radians(light.SpotlightAngle));
+    float maxCos = lerp(1.0, minCos, 0.5);
+    return smoothstep(minCos, maxCos, dot(-L.xyz, light.DirectionVS));
+}
+
 LightingResult DoDirectionalLight(Light light, MaterialParams material, float4 V, float4 P, float4 N)
 {
     LightingResult result;
@@ -174,6 +181,23 @@ LightingResult DoPointLight(Light light, MaterialParams material, float4 V, floa
     
     result.Diffuse = DoDiffuse(light, L, N) * light.Intensity * attenuation;
     result.Specular = DoSpecular(light, material, V, L, N) * light.Intensity * attenuation;
+    
+    return result;
+}
+
+LightingResult DoSpotLight(Light light, MaterialParams material, float4 V, float4 P, float4 N)
+{
+    LightingResult result;
+    
+    float4 L = float4(light.PositionVS, 1.0) - P;
+    float distance = length(L);
+    L /= distance;
+    
+    float attenuation = DoAttenuation(light, distance);
+    float spotIntensity = DoSpotCone(light, L);
+    
+    result.Diffuse = DoDiffuse(light, L, N) * light.Intensity * attenuation * spotIntensity;
+    result.Specular = DoSpecular(light, material, V, L, N) * light.Intensity * attenuation * spotIntensity;
     
     return result;
 }
@@ -212,7 +236,7 @@ LightingResult DoLighting(StructuredBuffer<Light> lights, MaterialParams materia
         break;
         case SPOT_LIGHT:
         {
-            //result = DoSpotLight(lights[i], material, V, P, N);
+            result = DoSpotLight(lights[i], material, V, P, N);
         }
         break;
         }
