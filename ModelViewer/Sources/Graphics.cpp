@@ -314,6 +314,8 @@ namespace Graphics
         // Temporary workaround because SetStablePowerState() is crashing
         D3D12EnableExperimentalFeatures(0, nullptr, nullptr, nullptr);
 
+        uint32_t selectedDeviceIndex = UINT32_MAX;
+
         if (!g_UseWarpDriver)
         {
             SIZE_T MaxSize = 0;
@@ -329,11 +331,25 @@ namespace Graphics
                 {
                     Utility::Printf(L"D3D12-capable hardware found:  %s (%u MB)\n", desc.Description, desc.DedicatedVideoMemory >> 20);
                     MaxSize = desc.DedicatedVideoMemory;
+                    selectedDeviceIndex = Idx;
                 }
             }
 
             if (MaxSize > 0)
                 g_Device = pDevice.Detach();
+        }
+
+        if (selectedDeviceIndex != UINT32_MAX)
+        {
+            Microsoft::WRL::ComPtr<IDXGIAdapter3> pAdapter3;
+            if (SUCCEEDED(dxgiFactory->EnumAdapters1(selectedDeviceIndex, &pAdapter)) && SUCCEEDED(pAdapter.As(&pAdapter3)))
+            {
+				// Get video memory info for both local and non-local memory segments.  This is useful for understanding the memory budget of the system and how much memory is currently being used by the application.
+                DXGI_QUERY_VIDEO_MEMORY_INFO localGroupMemoryInfo;
+                DXGI_QUERY_VIDEO_MEMORY_INFO nonLocalGroupMemoryInfo;
+                pAdapter3->QueryVideoMemoryInfo(selectedDeviceIndex, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &localGroupMemoryInfo);
+                pAdapter3->QueryVideoMemoryInfo(selectedDeviceIndex, DXGI_MEMORY_SEGMENT_GROUP_NON_LOCAL, &nonLocalGroupMemoryInfo);
+            }
         }
 
         if (g_Device == nullptr)
