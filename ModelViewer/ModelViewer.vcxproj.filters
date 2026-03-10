@@ -51,6 +51,12 @@
     <ClCompile Include="Sources\OcclusionQueryTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\Material.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Light.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Sources\Application.h">
@@ -89,6 +95,12 @@
     <ClInclude Include="Sources\Material.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Sources\Light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Sources\PixEvents.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -104,6 +116,9 @@
       <Filter>Shaders</Filter>
     </FxCompile>
     <FxCompile Include="Sources\shaders\OcclusionQueryTestVS.hlsl">
+      <Filter>Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="Sources\shaders\ComputeLightInVS.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
   </ItemGroup>

@@ -42,6 +42,9 @@ public:
 
     DXGI_FORMAT GetFormat() const { return mFormat; }
 
+    virtual void CreateSRV(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> SRVDescriptorHeap, UINT offset) const {}
+    virtual void CreateUAV(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> SRVDescriptorHeap, UINT offset) const {}
+
 protected:
 
     Microsoft::WRL::ComPtr<ID3D12Resource> m_pResource;
