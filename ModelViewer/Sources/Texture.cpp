@@ -77,21 +77,23 @@ Texture::Texture(const std::wstring& aPath)
             D3D12_RESOURCE_DESC resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(requiredSize);
             if (SUCCEEDED(Graphics::g_Device->CreateCommittedResource(&heapProperties, D3D12_HEAP_FLAG_NONE, &resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&intermediateResource))))
             {
-                Graphics::g_CommandList->Reset(Graphics::g_CommandAllocators[Graphics::g_CurrentBackBufferIndex].Get(), nullptr);
+                Graphics::g_GraphicsCommandList->Reset(Graphics::g_GraphicsCommandAllocators[Graphics::g_CurrentBackBufferIndex].Get(), nullptr);
 
-                UpdateSubresources(Graphics::g_CommandList.Get(), m_pResource.Get(), intermediateResource.Get(), 0, 0, subresourcesCount, subresources.data());
+                UpdateSubresources(Graphics::g_GraphicsCommandList.Get(), m_pResource.Get(), intermediateResource.Get(), 0, 0, subresourcesCount, subresources.data());
 
                 CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(m_pResource.Get(), D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-                Graphics::g_CommandList->ResourceBarrier(1, &barrier);
+                Graphics::g_GraphicsCommandList->ResourceBarrier(1, &barrier);
 
-                Graphics::g_CommandList->Close();
+                Graphics::g_GraphicsCommandList->Close();
 
-                ID3D12CommandList* const commandLists[] = { Graphics::g_CommandList.Get() };
-                Graphics::g_CommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+                ID3D12CommandList* const commandLists[] = { Graphics::g_GraphicsCommandList.Get() };
+                Graphics::g_GraphicsCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
 
                 Graphics::Flush();
 
-                Utility::Printf(L"Texture resource created: %s", aPath.c_str());
+                static unsigned texturesCount = 0;
+                ++texturesCount;
+                Utility::Printf(L"Texture resource created: %s. Textures count = %lu", aPath.c_str(), texturesCount);
             }
             else
             {
@@ -115,8 +117,24 @@ void Texture::CreateSRV(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> SRVDescript
     shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
     shaderResourceViewDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-    CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle;
-    rtvHandle.InitOffsetted(SRVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), offset * Graphics::g_SRVDescriptorSize);
+    CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle;
+    srvHandle.InitOffsetted(SRVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), offset * Graphics::g_SRVDescriptorSize);
 
-    Graphics::g_Device->CreateShaderResourceView(m_pResource.Get(), &shaderResourceViewDesc, rtvHandle);
+    Graphics::g_Device->CreateShaderResourceView(m_pResource.Get(), &shaderResourceViewDesc, srvHandle);
+}
+
+void Texture::CreateEmptySRV(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> SRVDescriptorHeap, UINT offset)
+{
+    D3D12_SHADER_RESOURCE_VIEW_DESC shaderResourceViewDesc = {};
+    shaderResourceViewDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+    shaderResourceViewDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+    shaderResourceViewDesc.Format = DXGI_FORMAT_R32G32B32A32_UINT;
+    shaderResourceViewDesc.Texture2D.MipLevels = 1;
+    shaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
+    shaderResourceViewDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+
+    CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle;
+    srvHandle.InitOffsetted(SRVDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), offset * Graphics::g_SRVDescriptorSize);
+
+    Graphics::g_Device->CreateShaderResourceView(nullptr, &shaderResourceViewDesc, srvHandle);
 }

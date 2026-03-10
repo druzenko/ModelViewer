@@ -93,7 +93,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>E:\Development\MV_DX12\ModelViewer\ThirdPartyLibraries\d3dx12;$(SolutionDir)ThirdPartyLibraries\Assimp\include;$(SolutionDir)ThirdPartyLibraries\DirectXTex\DirectXTex</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)packages\WinPixEventRuntime.1.0.210818001;$(SolutionDir)ThirdPartyLibraries\d3dx12;$(SolutionDir)ThirdPartyLibraries\Assimp\include;$(SolutionDir)ThirdPartyLibraries\DirectXTex\DirectXTex</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
@@ -147,7 +147,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;USE_PIX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>E:\Development\MV_DX12\ModelViewer\ThirdPartyLibraries\d3dx12;$(SolutionDir)ThirdPartyLibraries\Assimp\include;$(SolutionDir)ThirdPartyLibraries\DirectXTex\DirectXTex</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)packages\WinPixEventRuntime.1.0.210818001;$(SolutionDir)ThirdPartyLibraries\d3dx12;$(SolutionDir)ThirdPartyLibraries\Assimp\include;$(SolutionDir)ThirdPartyLibraries\DirectXTex\DirectXTex</AdditionalIncludeDirectories>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
@@ -199,6 +199,8 @@
     <ClCompile Include="Sources\Buffer.cpp" />
     <ClCompile Include="Sources\Camera.cpp" />
     <ClCompile Include="Sources\Graphics.cpp" />
+    <ClCompile Include="Sources\Light.cpp" />
+    <ClCompile Include="Sources\Material.cpp" />
     <ClCompile Include="Sources\Mesh.cpp" />
     <ClCompile Include="Sources\Model.cpp" />
     <ClCompile Include="Sources\ModelViewer.cpp">
@@ -223,10 +225,12 @@
     <ClInclude Include="Sources\Camera.h" />
     <ClInclude Include="Sources\GPUResource.h" />
     <ClInclude Include="Sources\Graphics.h" />
+    <ClInclude Include="Sources\Light.h" />
     <ClInclude Include="Sources\Material.h" />
     <ClInclude Include="Sources\Mesh.h" />
     <ClInclude Include="Sources\Model.h" />
     <ClInclude Include="Sources\pch.h" />
+    <ClInclude Include="Sources\PixEvents.h" />
     <ClInclude Include="Sources\Texture.h" />
     <ClInclude Include="Sources\Utility.h" />
     <ClInclude Include="Sources\WindowEvents.h" />
@@ -235,6 +239,16 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Sources\shaders\ComputeLightInVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">5.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">5.1</ShaderModel>
+    </FxCompile>
     <FxCompile Include="Sources\shaders\OcclusionQueryTestPS.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
