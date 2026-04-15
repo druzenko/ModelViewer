@@ -69,7 +69,7 @@ namespace Lightning
     void Startup()
     {
         Microsoft::WRL::ComPtr<ID3DBlob> computeShaderBlob;
-        ASSERT_HRESULT(D3DReadFileToBlob(L"ComputeLightInVS.cso", &computeShaderBlob), "Compute shader compilation failed");
+        ASSERT_HRESULT(D3DReadFileToBlob(L"ComputeLightInVsCS.cso", &computeShaderBlob), "Compute shader compilation failed");
 
         D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
         featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;

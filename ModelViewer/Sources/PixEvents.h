@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef _DEBUG
-#include "Include/WinPixEventRuntime/pix3.h"
+#include <pix3.h>
 #endif // DEBUG
 
 class ScopedPixEvent;

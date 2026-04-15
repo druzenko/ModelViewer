@@ -73,11 +73,11 @@ void ModelViewer::Startup(void)
 {
     // Load the vertex shader.
     Microsoft::WRL::ComPtr<ID3DBlob> vertexShaderBlob;
-    ASSERT_HRESULT(D3DReadFileToBlob(L"VertexShader.cso", &vertexShaderBlob), "Vertex shader compilation failed");
+    ASSERT_HRESULT(D3DReadFileToBlob(L"VertexShaderVS.cso", &vertexShaderBlob), "Vertex shader compilation failed");
 
     // Load the pixel shader.
     Microsoft::WRL::ComPtr<ID3DBlob> pixelShaderBlob;
-    ASSERT_HRESULT(D3DReadFileToBlob(L"PixelShader.cso", &pixelShaderBlob), "Pixel shader compilation failed");
+    ASSERT_HRESULT(D3DReadFileToBlob(L"PixelShaderPS.cso", &pixelShaderBlob), "Pixel shader compilation failed");
 
     // Create the vertex input layout
     D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
