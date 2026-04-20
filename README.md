@@ -18,6 +18,7 @@ Dependencies are fetched automatically by CMake via `FetchContent`:
 - [DirectXTex](https://github.com/microsoft/DirectXTex)
 - [DirectX-Headers](https://github.com/microsoft/DirectX-Headers)
 - [Assimp](https://github.com/assimp/assimp) (OBJ importer)
+- [ImGui](https://github.com/ocornut/imgui)
 - [WinPixEventRuntime](https://www.nuget.org/packages/WinPixEventRuntime)
 
 ### Generate the Visual Studio solution

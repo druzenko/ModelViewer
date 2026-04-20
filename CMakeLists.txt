@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.23)
 
 include(FetchContent)
 include(cmake/shaders.cmake)
+include(cmake/imgui.cmake)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY CTEST_TARGETS_ADDED 1)
@@ -76,7 +77,10 @@ target_link_libraries(model_viewer
         "$<$<CONFIG:Debug>:${winpixeventruntime_SOURCE_DIR}/bin/x64/WinPixEventRuntime.lib>"
 )
 
+target_add_imgui(model_viewer)
+
 target_include_directories(model_viewer PRIVATE
+    ${CMAKE_SOURCE_DIR}/ModelViewer/Sources
     "$<$<CONFIG:Debug>:${winpixeventruntime_SOURCE_DIR}/Include/WinPixEventRuntime>"
 )
 
@@ -94,7 +98,7 @@ target_add_shaders(SHADERS)
 target_sources(model_viewer PRIVATE ${SHADERS})
 source_group(TREE ${CMAKE_SOURCE_DIR}/ModelViewer FILES ${SOURCES} ${SHADERS})
 
-set_property(DIRECTORY ${TEST_CMAKE_CURRENT_SOURCE_DIRDIR} PROPERTY VS_STARTUP_PROJECT model_viewer)
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT model_viewer)
 
 target_compile_definitions(model_viewer PRIVATE UNICODE _UNICODE)
 set_target_properties(model_viewer PROPERTIES CXX_STANDARD 23)

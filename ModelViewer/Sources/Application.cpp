@@ -4,6 +4,7 @@
 #include "GPUResource.h"
 #include <iostream>
 #include <WindowsX.h>
+#include <imgui_impl_win32.h>
 
 uint32_t g_DisplayWidth = 1920;
 uint32_t g_DisplayHeight = 1080;
@@ -15,6 +16,8 @@ LARGE_INTEGER g_PriviousStartFrameTime;
 LARGE_INTEGER g_Frequency;
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 void InitializeApplication(IApplication& game)
 {
@@ -145,6 +148,9 @@ bool IApplication::IsDone(void)
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+        return true;
+
     switch (message)
     {
     case WM_SIZE:

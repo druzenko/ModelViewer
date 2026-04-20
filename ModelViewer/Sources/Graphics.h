@@ -14,6 +14,7 @@ namespace Graphics
     inline constexpr uint32_t g_SwapChainBufferCount = 3;
     inline constexpr uint32_t g_DisplayWidth = 1920;
     inline constexpr uint32_t g_DisplayHeight = 1080;
+    inline constexpr DXGI_FORMAT g_RTVFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
     inline constexpr float m_FoV = 45.0f;
     extern uint32_t g_CurrentBackBufferIndex;
     extern Microsoft::WRL::ComPtr<ID3D12Device> g_Device;

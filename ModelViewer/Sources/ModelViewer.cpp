@@ -5,6 +5,7 @@
 #include "Material.h"
 #include "Light.h"
 #include <assimp/scene.h>
+#include <imgui/ImGuiHelper.h>
 
 #if _DEBUG
 #include "pix3.h"
@@ -151,7 +152,7 @@ void ModelViewer::Startup(void)
 
     D3D12_RT_FORMAT_ARRAY rtvFormats = {};
     rtvFormats.NumRenderTargets = 1;
-    rtvFormats.RTFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    rtvFormats.RTFormats[0] = Graphics::g_RTVFormat;
 
     pipelineStateStream.pRootSignature = m_RootSignature.Get();
     pipelineStateStream.InputLayout = { inputLayout, _countof(inputLayout) };
@@ -190,11 +191,13 @@ void ModelViewer::Startup(void)
 
     mMaterialsCBV = Buffer(L"Materials CBV", Materials::GetMaterialCount(), sizeof(MaterialParams), Materials::GetMaterialParams().data());
     //mMaterialsCBV.CreateSRV(Graphics::g_SRVDescriptorHeap, Materials::GetMaterialCount() * MATERIAL_TEXTURES_COUNT + 1);
+
+	ImGuiHelper::Initialize();
 }
 
 void ModelViewer::Cleanup(void)
 {
-
+	ImGuiHelper::Shutdown();
 }
 
 void ModelViewer::OnMouseMoved(int aDeltaX, int aDeltaY)
@@ -250,6 +253,8 @@ void ModelViewer::Update(double deltaT)
 
 void ModelViewer::RenderScene(void)
 {
+	ImGuiHelper::StartFrame();
+
     Lightning::Update(m_Transform.MV);
 
     Microsoft::WRL::ComPtr<ID3D12CommandAllocator> commandAllocator = Graphics::g_GraphicsCommandAllocators[Graphics::g_CurrentBackBufferIndex];
@@ -294,6 +299,8 @@ void ModelViewer::RenderScene(void)
 
     barrier = CD3DX12_RESOURCE_BARRIER::Transition(backBuffer.Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
     Graphics::g_GraphicsCommandList->ResourceBarrier(1, &barrier);
+
+    ImGuiHelper::EndFrame();
 
     Graphics::g_GraphicsCommandList->Close();
 
