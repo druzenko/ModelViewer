@@ -197,6 +197,15 @@ void ModelViewer::Startup(void)
 
 void ModelViewer::Cleanup(void)
 {
+    Graphics::Flush();
+
+	m_Model.Cleanup();
+	Lightning::Cleanup();
+
+	m_RootSignature.Reset();
+	m_PipelineState.Reset();
+	mMaterialsCBV.Destroy();
+
 	ImGuiHelper::Shutdown();
 }
 

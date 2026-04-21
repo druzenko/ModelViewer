@@ -22,11 +22,11 @@ public:
     {
     }
 
-    ~GpuResource() { Destroy(); }
+    virtual ~GpuResource() { Destroy(); }
 
     virtual void Destroy()
     {
-        m_pResource = nullptr;
+        m_pResource.Reset();
         m_GpuVirtualAddress = D3D12_GPU_VIRTUAL_ADDRESS_NULL;
     }
 

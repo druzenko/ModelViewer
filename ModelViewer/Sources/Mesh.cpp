@@ -40,3 +40,9 @@ void Mesh::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList,
 
 	PIX_SCOPED_EVENT(commandList->DrawIndexedInstanced(m_IndexBufferView.SizeInBytes / sizeof(unsigned int), 1, 0, 0, 0), commandList.Get(), 0x0000FF, "Draw mesh: %s, material %s", mName.c_str(), Materials::GetMaterialName(mMaterialID));
 }
+
+void Mesh::Cleanup()
+{
+	mVertexBuffer.Destroy();
+	mIndexBuffer.Destroy();
+}

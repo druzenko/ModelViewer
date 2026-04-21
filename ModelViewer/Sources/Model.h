@@ -25,5 +25,6 @@ public:
 	Model() {}
 	Model(const std::string& aPath);
 	void Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList, UINT aSRVRootParameterIndex, UINT aMaterialIDRootParameterIndex) const;
+	void Cleanup();
 };
 

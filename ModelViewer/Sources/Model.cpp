@@ -174,3 +174,13 @@ void Model::Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList
 		mesh.Render(commandList, aSRVRootParameterIndex, aMaterialIDRootParameterIndex);
 	}
 }
+
+void Model::Cleanup()
+{
+	for (Mesh& mesh : mMeshes)
+	{
+		mesh.Cleanup();
+	}
+
+	Materials::Cleanup();
+}

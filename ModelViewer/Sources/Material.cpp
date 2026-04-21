@@ -54,4 +54,11 @@ namespace Materials
     {
         return sMaterialParamsRegister;
     }
+
+    void Cleanup()
+    {
+        sMaterialRegister.clear();
+        sMaterialParamsRegister.clear();
+        Texture::DestroyAllTextures();
+	}
 }

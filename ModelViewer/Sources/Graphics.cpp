@@ -605,19 +605,34 @@ namespace Graphics
 
     void Shutdown(void)
     {
-        Flush();
-
         ::CloseHandle(g_FenceEvent);
 
-        g_GraphicsCommandQueue.Reset();
+        for (int i = 0; i < g_SwapChainBufferCount; ++i)
+        {
+			g_BackBuffers[i].Reset();
+        }
+
+		g_DepthBuffer.Reset();
+
         g_RTVDescriptorHeap.Reset();
+        g_DSVDescriptorHeap.Reset();
+        g_SRVDescriptorHeap.Reset();
+        g_QueryOcclusionHeap.Reset();
+
+        g_SwapChain3.Reset();
+
+        g_GraphicsCommandList.Reset();
+        g_ComputeCommandList.Reset();
+
         for (int i = 0; i < g_SwapChainBufferCount; ++i)
         {
             g_GraphicsCommandAllocators[i].Reset();
             g_ComputeCommandAllocators[i].Reset();
         }
-        g_GraphicsCommandList.Reset();
-        g_ComputeCommandList.Reset();
+
+        g_GraphicsCommandQueue.Reset();
+		g_ComputeCommandQueue.Reset();
+        
         g_Fence.Reset();
         g_Device.Reset();
 

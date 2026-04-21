@@ -92,11 +92,11 @@ namespace ImGuiHelper
 
 	void Shutdown()
 	{
-        s_ImGuiSrvDescHeapAlloc.Destroy();
-
         ImGui_ImplDX12_Shutdown();
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
+
+        s_ImGuiSrvDescHeapAlloc.Destroy();
 	}
 
 	void StartFrame()

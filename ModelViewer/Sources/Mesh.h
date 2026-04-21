@@ -35,5 +35,6 @@ private:
 public:
 	Mesh(const Buffer& aVertexBuffer, const Buffer& aIndexBuffer, MaterialID aMaterialID, const char* aName);
 	void Render(Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> commandList, UINT aSRVRootParameterIndex, UINT aMaterialIDRootParameterIndex) const;
+	void Cleanup();
 };
 

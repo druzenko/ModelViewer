@@ -29,4 +29,5 @@ namespace Lightning
     UINT64 GetLightsCount();
     void Startup();
     void Update(const DirectX::XMMATRIX& MV);
+	void Cleanup();
 }

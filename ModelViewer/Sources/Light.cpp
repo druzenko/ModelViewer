@@ -151,4 +151,11 @@ namespace Lightning
         Graphics::Signal(Graphics::g_ComputeCommandQueue);
         Graphics::WaitForFenceValue();
     }
+
+    void Cleanup()
+    {
+        mLightsStructuredBuffer.Destroy();
+        g_RootSignature.Reset();
+        g_PipelineState.Reset();
+    }
 }

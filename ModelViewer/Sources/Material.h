@@ -49,4 +49,5 @@ namespace Materials
     const char* GetMaterialName(MaterialID materialID);
     void CreateMaterialTexturesSRV();
     const std::vector<MaterialParams>& GetMaterialParams();
+	void Cleanup();
 }
