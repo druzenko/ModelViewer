@@ -41,7 +41,7 @@ namespace Graphics
     Microsoft::WRL::ComPtr<ID3D12Fence> g_Fence = nullptr;
     HANDLE g_FenceEvent = nullptr;
     uint64_t g_FenceValue = 0;
-    //uint64_t g_FrameFenceValues[g_SwapChainBufferCount] = {};
+    uint64_t g_FrameFenceValues[g_SwapChainBufferCount] = {};
 	
 
     constexpr bool g_UseWarpDriver = false;
@@ -219,13 +219,13 @@ namespace Graphics
         g_Device->CreateDepthStencilView(g_DepthBuffer.Get(), &Desc, g_DSVDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
     }
 
-    uint64_t Signal(Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue)
+    uint64_t Signal(const Microsoft::WRL::ComPtr<ID3D12CommandQueue>& commandQueue)
     {
         ASSERT_HRESULT(commandQueue->Signal(g_Fence.Get(), ++g_FenceValue), "Error: ID3D12CommandQueue::Signal");
         return g_FenceValue;
     }
 
-    void WaitForFenceValue()
+    void WaitForFenceValueCPU()
     {
         if (g_Fence->GetCompletedValue() < g_FenceValue)
         {
@@ -234,12 +234,27 @@ namespace Graphics
         }
     }
 
+    void WaitForFenceValueGPU(const Microsoft::WRL::ComPtr<ID3D12CommandQueue>& commandQueue)
+    {
+		commandQueue->Wait(g_Fence.Get(), g_FenceValue);
+    }
+
+    void WaitForBackBufferReadiness()
+    {
+		const uint64_t currentBackBufferFenceValue = g_FrameFenceValues[g_CurrentBackBufferIndex];
+        if (g_Fence->GetCompletedValue() < currentBackBufferFenceValue)
+        {
+            ASSERT_HRESULT(g_Fence->SetEventOnCompletion(currentBackBufferFenceValue, g_FenceEvent), "Error: ID3D12Fence::SetEventOnCompletion");
+            ::WaitForSingleObject(g_FenceEvent, static_cast<DWORD>(std::chrono::milliseconds::max().count()));
+        }
+    }
+
     void Flush()
     {
         Signal(g_ComputeCommandQueue);
-        WaitForFenceValue();
+        WaitForFenceValueCPU();
         Signal(g_GraphicsCommandQueue);
-        WaitForFenceValue();
+        WaitForFenceValueCPU();
     }
 
     void Initialize(void)
@@ -650,11 +665,7 @@ namespace Graphics
         UINT syncInterval = g_VSync ? 1 : 0;
         UINT presentFlags = g_TearingSupported && !g_VSync ? DXGI_PRESENT_ALLOW_TEARING : 0;
         ASSERT_HRESULT(g_SwapChain3->Present(syncInterval, presentFlags), "Error: IDXGISwapChain3::Present");
- 
-        /*g_FrameFenceValues[g_CurrentBackBufferIndex] = */Signal(g_GraphicsCommandQueue);
-
+        g_FrameFenceValues[g_CurrentBackBufferIndex] = Signal(g_GraphicsCommandQueue);
         g_CurrentBackBufferIndex = g_SwapChain3->GetCurrentBackBufferIndex();
-
-        WaitForFenceValue();
     }
 }

@@ -262,6 +262,8 @@ void ModelViewer::Update(double deltaT)
 
 void ModelViewer::RenderScene(void)
 {
+    Graphics::WaitForBackBufferReadiness();
+
 	ImGuiHelper::StartFrame();
 
     Lightning::Update(m_Transform.MV);
@@ -314,5 +316,6 @@ void ModelViewer::RenderScene(void)
     Graphics::g_GraphicsCommandList->Close();
 
     ID3D12CommandList* const commandLists[] = { Graphics::g_GraphicsCommandList.Get() };
+    Graphics::WaitForFenceValueGPU(Graphics::g_GraphicsCommandQueue);
     Graphics::g_GraphicsCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
 }

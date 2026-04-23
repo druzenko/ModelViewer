@@ -5,8 +5,10 @@ namespace Graphics
     void Initialize(void);
     void Shutdown(void);
     void Present(void);
-    uint64_t Signal(Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue);
-    void WaitForFenceValue();
+    uint64_t Signal(const Microsoft::WRL::ComPtr<ID3D12CommandQueue>& commandQueue);
+    void WaitForFenceValueCPU();
+    void WaitForFenceValueGPU(const Microsoft::WRL::ComPtr<ID3D12CommandQueue>& commandQueue);
+	void WaitForBackBufferReadiness();
     void Flush(void);
     void Resize(int width, int height);
     void GPUCrashCallback(HRESULT errorCode);

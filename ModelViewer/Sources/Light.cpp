@@ -149,7 +149,6 @@ namespace Lightning
         Graphics::g_ComputeCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
 
         Graphics::Signal(Graphics::g_ComputeCommandQueue);
-        Graphics::WaitForFenceValue();
     }
 
     void Cleanup()
