@@ -259,71 +259,61 @@ namespace Graphics
 
     void Initialize(void)
     {
-        Microsoft::WRL::ComPtr<ID3D12Device> pDevice;
-
+        DWORD dxgiFactoryFlags = 0;
         bool useDebugLayers = false;
+
 #if _DEBUG
         if (GetModuleHandle(L"WinPixGpuCapturer.dll") == 0)
         {
             LoadLibrary(GetLatestWinPixGpuCapturerPath().c_str());
         }
 
-        useDebugLayers = true;
-#endif
-
-        DWORD dxgiFactoryFlags = 0;
-
-        if (useDebugLayers)
+        //DRED
+        Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> pDredSettings;
+        if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&pDredSettings))))
         {
-            //DRED
-            Microsoft::WRL::ComPtr<ID3D12DeviceRemovedExtendedDataSettings1> pDredSettings;
-            if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&pDredSettings))))
-            {
-                // Turn on AutoBreadcrumbs and Page Fault reporting
-                pDredSettings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-                pDredSettings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
-            }
-
-
-            Microsoft::WRL::ComPtr<ID3D12Debug> debugInterface;
-            if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface))))
-            {
-                debugInterface->EnableDebugLayer();
-
-                Microsoft::WRL::ComPtr<ID3D12Debug1> debugInterface1;
-                if (SUCCEEDED((debugInterface->QueryInterface(IID_PPV_ARGS(&debugInterface1)))))
-                {
-                    debugInterface1->SetEnableGPUBasedValidation(true);
-                }
-            }
-            else
-            {
-                Utility::Print("WARNING:  Unable to enable D3D12 debug validation layer\n");
-            }
-
-#if _DEBUG
-            Microsoft::WRL::ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
-            if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(dxgiInfoQueue.GetAddressOf()))))
-            {
-                dxgiFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
-
-                dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true);
-                dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true);
-                dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_WARNING, true);
-                dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_INFO, true);
-                dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_MESSAGE, true);
-
-                DXGI_INFO_QUEUE_MESSAGE_ID hide[] =
-                {
-                    80 /* IDXGISwapChain::GetContainingOutput: The swapchain's adapter does not control the output on which the swapchain's window resides. */,
-                };
-                DXGI_INFO_QUEUE_FILTER filter = {};
-                filter.DenyList.NumIDs = _countof(hide);
-                filter.DenyList.pIDList = hide;
-                dxgiInfoQueue->AddStorageFilterEntries(DXGI_DEBUG_DXGI, &filter);
-            }
-#endif
+            // Turn on AutoBreadcrumbs and Page Fault reporting
+            pDredSettings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+            pDredSettings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
         }
+
+        Microsoft::WRL::ComPtr<ID3D12Debug> debugInterface;
+        if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugInterface))))
+        {
+            debugInterface->EnableDebugLayer();
+
+            Microsoft::WRL::ComPtr<ID3D12Debug1> debugInterface1;
+            if (SUCCEEDED((debugInterface->QueryInterface(IID_PPV_ARGS(&debugInterface1)))))
+            {
+                debugInterface1->SetEnableGPUBasedValidation(true);
+            }
+        }
+        else
+        {
+            Utility::Print("WARNING:  Unable to enable D3D12 debug validation layer\n");
+        }
+
+        Microsoft::WRL::ComPtr<IDXGIInfoQueue> dxgiInfoQueue;
+        if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(dxgiInfoQueue.GetAddressOf()))))
+        {
+            dxgiFactoryFlags = DXGI_CREATE_FACTORY_DEBUG;
+
+            dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, true);
+            dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, true);
+            dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_WARNING, true);
+            dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_INFO, true);
+            dxgiInfoQueue->SetBreakOnSeverity(DXGI_DEBUG_ALL, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_MESSAGE, true);
+
+            DXGI_INFO_QUEUE_MESSAGE_ID hide[] =
+            {
+                80 /* IDXGISwapChain::GetContainingOutput: The swapchain's adapter does not control the output on which the swapchain's window resides. */,
+            };
+            DXGI_INFO_QUEUE_FILTER filter = {};
+            filter.DenyList.NumIDs = _countof(hide);
+            filter.DenyList.pIDList = hide;
+            dxgiInfoQueue->AddStorageFilterEntries(DXGI_DEBUG_DXGI, &filter);
+        }
+#endif
 
         // Obtain the DXGI factory
         Microsoft::WRL::ComPtr<IDXGIFactory6> dxgiFactory;
@@ -341,6 +331,8 @@ namespace Graphics
         {
             SIZE_T MaxSize = 0;
 
+            Microsoft::WRL::ComPtr<ID3D12Device> pDevice;
+
             for (uint32_t Idx = 0; DXGI_ERROR_NOT_FOUND != dxgiFactory->EnumAdapters1(Idx, &pAdapter); ++Idx)
             {
                 DXGI_ADAPTER_DESC1 desc;
@@ -348,16 +340,22 @@ namespace Graphics
                 if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
                     continue;
 
-                if ((desc.DedicatedVideoMemory > MaxSize) && SUCCEEDED(D3D12CreateDevice(pAdapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&pDevice))))
+                if (SUCCEEDED(D3D12CreateDevice(pAdapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&pDevice))))
                 {
                     Utility::Printf(L"D3D12-capable hardware found:  %s (%u MB)\n", desc.Description, desc.DedicatedVideoMemory >> 20);
-                    MaxSize = desc.DedicatedVideoMemory;
-                    selectedDeviceIndex = Idx;
+
+                    if (desc.DedicatedVideoMemory > MaxSize)
+                    {
+                        MaxSize = desc.DedicatedVideoMemory;
+                        selectedDeviceIndex = Idx;
+                    }
                 }
             }
 
-            if (MaxSize > 0)
-                g_Device = pDevice.Detach();
+            if (selectedDeviceIndex != UINT32_MAX && SUCCEEDED(dxgiFactory->EnumAdapters1(selectedDeviceIndex, &pAdapter)))
+            {
+                SUCCEEDED(D3D12CreateDevice(pAdapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&g_Device)));
+            }
         }
 
         if (selectedDeviceIndex != UINT32_MAX)
@@ -380,10 +378,9 @@ namespace Graphics
             else
                 Utility::Print("Failed to find a hardware adapter.  Falling back to WARP.\n");
             SUCCEEDED(dxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(&pAdapter)));
-            SUCCEEDED(D3D12CreateDevice(pAdapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&pDevice)));
-            g_Device = pDevice.Detach();
+            SUCCEEDED(D3D12CreateDevice(pAdapter.Get(), D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&g_Device)));
         }
-#ifndef RELEASE
+#if _DEBUG
         else
         {
             bool DeveloperModeEnabled = false;
@@ -406,9 +403,7 @@ namespace Graphics
             if (DeveloperModeEnabled)
                 g_Device->SetStablePowerState(TRUE);
         }
-#endif
 
-#if _DEBUG
         Microsoft::WRL::ComPtr<ID3D12InfoQueue> pInfoQueue = nullptr;
         if (SUCCEEDED(g_Device->QueryInterface(IID_PPV_ARGS(&pInfoQueue))))
         {

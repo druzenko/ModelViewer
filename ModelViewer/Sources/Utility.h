@@ -106,5 +106,12 @@ namespace Utility
 
 #define WARN_ONCE_IF_NOT( isTrue, ... ) WARN_ONCE_IF(!(isTrue), __VA_ARGS__)
 
+    template<typename T>
+    std::uint32_t GetRefCount(const T& pUnknown)
+    {
+        pUnknown->AddRef();
+        return pUnknown->Release();
+    }
+
 #endif
 }
